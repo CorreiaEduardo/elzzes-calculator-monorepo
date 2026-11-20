@@ -66,7 +66,7 @@ go-test:
 
 go-coverage:
 	cd $(API_DIR) && go test ./... -coverprofile=coverage.out
-	./scripts/check-go-coverage.sh $(API_DIR)/coverage.out
+	bash ./scripts/check-go-coverage.sh $(API_DIR)/coverage.out
 
 go-race:
 	cd $(API_DIR) && go test -race ./...
@@ -127,9 +127,9 @@ compose-down:
 
 compose-verify:
 	@set -eu; \
-	trap 'docker compose down' EXIT; \
+	trap 'status=$$?; if [ $$status -ne 0 ]; then docker compose logs --no-color || true; fi; docker compose down || true; exit $$status' EXIT; \
 	docker compose up --build -d; \
-	curl -fsS --retry 30 --retry-connrefused --retry-delay 1 http://localhost:8080/healthz; \
+	curl -fsS --retry 30 --retry-all-errors --retry-delay 1 http://localhost:8080/healthz; \
 	echo; \
 	curl -fsS http://localhost:8080/ > /tmp/elzzes-calculator-index.html; \
 	head -n 5 /tmp/elzzes-calculator-index.html; \

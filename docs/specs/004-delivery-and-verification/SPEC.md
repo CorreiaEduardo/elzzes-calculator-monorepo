@@ -109,7 +109,7 @@ gofmt -l .
 go vet ./...
 go test ./... -coverprofile=coverage.out
 go tool cover -func=coverage.out
-./scripts/check-go-coverage.sh coverage.out
+bash scripts/check-go-coverage.sh coverage.out
 go test -race ./...
 go run ./cmd/api &
 curl -s localhost:8080/healthz
