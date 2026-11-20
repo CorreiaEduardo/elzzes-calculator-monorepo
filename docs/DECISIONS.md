@@ -1,6 +1,6 @@
 # Decisions
 
-**Status:** backend implementation baseline, 2026-11-20. This is the high-level decision index, not a second specification. Each definition has one canonical home; update that document, not this page.
+**Status:** implementation baseline, 2026-11-20. This is the high-level decision index, not a second specification. Each definition has one canonical home; update that document, not this page.
 
 ## Product shape
 

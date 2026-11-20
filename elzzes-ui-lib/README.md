@@ -2,12 +2,12 @@
 
 Internal, unpublished React components, design tokens, and Storybook stories for Elzzes Calculator, published as `@elzzes/ui`. Presentational only: it renders what it is given and calls back on interaction.
 
-**Status:** documentation baseline and scaffolding — visual and accessibility behavior is specified in [`docs/DESIGN.md`](../docs/DESIGN.md). Stack: React 19, TypeScript, Tailwind CSS v4, class-variance-authority, clsx, tailwind-merge, lucide-react, Storybook, Vitest + React Testing Library.
+**Status:** implemented — generic UI primitives, variants, theme tokens, tests, and Storybook stories. Visual and accessibility behavior is specified in [`docs/DESIGN.md`](../docs/DESIGN.md). Stack: React 19, TypeScript, Tailwind CSS v4, class-variance-authority, clsx, tailwind-merge, Storybook, Vitest + React Testing Library.
 
 ## Responsibilities
 
-- The component set and variants defined in [Design § Components](../docs/DESIGN.md#components), plus theme tokens (Tailwind CSS custom properties).
-- Light/dark tokens driven by `prefers-color-scheme`; responsive keypad layout.
+- Generic primitives: `Button` (six variants, four sizes), `Card`, `Display` (expression live region, value, alert, busy), and `Keypad` (accessory strip plus key grid).
+- Theme tokens as Tailwind CSS custom properties, with light/dark values driven by `prefers-color-scheme`.
 - Accessible primitives: real buttons, accessible names, visible focus, minimum target size, `aria-keyshortcuts`.
 - Storybook stories covering component variants and states.
 
@@ -33,12 +33,13 @@ pnpm --filter @elzzes/ui test
 | `pnpm --filter @elzzes/ui build-storybook` | static Storybook build |
 | `pnpm --filter @elzzes/ui lint` | ESLint |
 | `pnpm --filter @elzzes/ui typecheck` | TypeScript, no emit |
-| `pnpm --filter @elzzes/ui test` | Vitest |
+| `pnpm --filter @elzzes/ui test` | Vitest (run once) |
+| `pnpm --filter @elzzes/ui test:watch` | Vitest watch mode |
 | `pnpm --filter @elzzes/ui test:coverage` | tests + coverage report |
 
 ## Testing
 
-Vitest + React Testing Library: rendering, variants, accessible names/roles, keyboard activation, focus visibility, and token usage. Storybook documents components; it does not replace behavior/accessibility tests. The coverage target and CI are canonical in [spec 004](../docs/specs/004-delivery-and-verification/SPEC.md).
+Vitest + React Testing Library + user-event: rendering, variants, accessible names/roles, keyboard activation, focus visibility, token usage, live/alert/busy states, and the accessory slot. Storybook documents components; it does not replace behavior/accessibility tests. The coverage target and CI are canonical in [spec 004](../docs/specs/004-delivery-and-verification/SPEC.md).
 
 ## Conventions
 

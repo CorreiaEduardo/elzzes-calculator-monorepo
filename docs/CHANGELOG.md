@@ -22,6 +22,9 @@ Notable changes, newest first. Implementation changes are added as they land; th
 - Backend tests: domain matrix for basic and advanced operations (division by zero, overflow, underflow, negative zero, power/sqrt/percent domains) and HTTP matrix for success, 400/413/415/422, 405/404, body limits, and unexpected errors.
 - Multi-stage non-root `Dockerfile` and `.dockerignore` for the API. Docker was unavailable locally, so the image was written but not built.
 - Table-driven tests for config loading, the logging adapter, routing `404`/`405`, middleware, panic recovery, the error envelope, and health.
+- Calculator UI for spec 003: immediate-execution reducer with request plans/continuations and stale-response guards, pure entry/formatting/expression modules, a 10-second `AbortController` API client with strict Zod validation, TanStack Query mutation orchestration, keyboard mapping, and accessible keypad composition.
+- Generic UI library primitives: `Button` (six variants, four sizes), `Card`, `Display` (expression live region, value, alert, busy), and `Keypad` (accessory strip plus grid), with `--color-ui-*` light/dark tokens and Storybook stories/tests.
+- Frontend tooling for the agreed stack: TanStack Query, Zod, MSW, user-event, coverage provider, Storybook; Vitest setup files, threads pool, `/api` dev proxy, and `test:coverage` scripts.
 
 ### Changed
 
@@ -33,10 +36,11 @@ Notable changes, newest first. Implementation changes are added as they land; th
 - Corrected the backend layer rule: `transport/http` may depend on the calculator's public API, while `calculator` must not depend on transport or HTTP; updated conventions, architecture, and decisions.
 - Updated API/root READMEs and spec statuses for the implemented backend, and corrected spec 001's underflow example to `5e-324 ÷ 10 → 0` (`1e-308 ÷ 1e10` is `1e-318`).
 - Refined calculate validation: field-type errors now use `UNKNOWN_OPERATION`/`INVALID_OPERAND` instead of the misleading `INVALID_JSON`; operand errors name their index; duplicate keys are documented as last-value-wins; non-limit body-read failures are logged for diagnostics.
+- Generalized DESIGN's calculator-specific component names to the generic `Card`, `Button`, `Display`, and `Keypad` primitives; documented the web-to-variant mapping and resolved UI ambiguities (error recovery, unary labels, power glyph, names, shortcuts, formatting, 4xx mapping).
+- Updated the web/UI READMEs, conventions, architecture status, spec/INDEX/AGENTS statuses, and `.gitignore` coverage entry for the implemented frontend.
 
 ### Notes
 
-- The Go backend implements all seven operations; the web app and UI library remain scaffolds pending spec 003. `problem.md` remains authoritative; `brainstorm.md` is raw early notes, not a commitment.
-- Web and UI packages are scaffolds: the web app still renders the Vite starter screen, and the calculator UI, API client, and Storybook stories are not implemented.
-- The frozen pnpm install and SPA production build were verified locally; the web image and Compose stack were not built because Docker is unavailable in this environment.
-- Backend verification: `gofmt`, `go vet`, `go test`, `go test -race`, and the full curl smoke matrix pass. Docker/Compose remain unverified.
+- The Go backend and calculator UI implement specs 001–003. Spec 004 (delivery, CI, Compose verification) remains scoped. `problem.md` remains authoritative; `brainstorm.md` is raw early notes, not a commitment.
+- Frontend verification: both packages pass typecheck, lint, tests, and coverage (web 94.8%, UI 100% of instrumented component code); `build-storybook` and the production web build pass. Docker/Compose remain unverified in this environment.
+- Manual responsive and screen-reader checked manually by reviewer; automated tests cover roles, names, live regions, alerts, busy state, keyboard mapping, and request behavior.

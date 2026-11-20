@@ -4,7 +4,7 @@ A full-stack calculator: a React + TypeScript single-page app backed by a statel
 
 The frontend owns input, interaction, formatting, and error presentation; it never evaluates arithmetic. The stack is React 19 + TypeScript + Vite + Tailwind CSS v4 + TanStack Query + Zod on the front end, Go standard library on the back end, OpenAPI 3.1 as the wire contract, pnpm workspaces, Storybook for the shared UI library, and Nginx + Docker Compose for delivery. GitHub Actions runs the verification checks.
 
-**Status:** the Go API implements all seven operations. The React app is still the Vite starter; the calculator UI and API client are spec 003.
+**Status:** specs 001–003 are implemented: the Go API exposes all seven operations, and the React app provides the calculator, typed API client, tests, and UI-library Storybook stories. Spec 004 (delivery/CI) remains scoped.
 
 ## Operations
 

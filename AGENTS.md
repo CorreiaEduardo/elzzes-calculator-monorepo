@@ -23,7 +23,7 @@ The agreed stack is pnpm workspaces; React 19 + TypeScript + Vite + Tailwind CSS
 
 Never duplicate a definition. Update its canonical document and link from everywhere else. If docs conflict, reconcile before coding.
 
-**Current phase:** backend specs 001–002 implemented (2026-11-20), including all seven operations and `POST /api/v1/calculate`. The web app and UI library remain scaffolding; next is spec 003, then spec 004.
+**Current phase:** specs 001–003 implemented (2026-11-20): the Go API, calculator UI, API client, reducer, tests, and Storybook. Next is spec 004 (delivery and verification).
 
 ## Priorities
 

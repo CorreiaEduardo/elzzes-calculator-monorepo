@@ -26,6 +26,9 @@ sketch
 # Storybook
 storybook-static/
 
+# Test coverage
+coverage/
+
 # Visual Studio Code Extensions
 .vscode/*
 !.vscode/settings.json

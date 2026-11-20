@@ -1,6 +1,6 @@
 # Architecture
 
-**Status:** backend implementation baseline, stack agreed 2026-11-20. The API implements all seven operations and `GET /healthz`; the calculator UI has not landed. This document is canonical for system structure, request flow, state ownership, the numeric model, and deployment. The wire contract is canonical in [`openapi.yaml`](../elzzes-calculator-api/docs/openapi.yaml); operation behavior and edge cases in [spec 001](specs/001-basic-arithmetic-operations/SPEC.md) and [spec 002](specs/002-advanced-arithmetic-operations/SPEC.md); UI behavior in [Design](DESIGN.md); implementation details in the component conventions.
+**Status:** implementation baseline, stack agreed 2026-11-20. The API implements all seven operations and `GET /healthz`; the calculator UI, API client, and shared UI primitives are implemented. Spec 004 delivery/CI remains scoped. This document is canonical for system structure, request flow, state ownership, the numeric model, and deployment. The wire contract is canonical in [`openapi.yaml`](../elzzes-calculator-api/docs/openapi.yaml); operation behavior and edge cases in [spec 001](specs/001-basic-arithmetic-operations/SPEC.md) and [spec 002](specs/002-advanced-arithmetic-operations/SPEC.md); UI behavior in [Design](DESIGN.md); implementation details in the component conventions.
 
 ## System context
 
@@ -118,9 +118,9 @@ Nothing is persisted: no `localStorage`, session, URL state, or backend history.
 
 ## Shared UI library
 
-`@elzzes/ui` (folder `elzzes-ui-lib`) is an internal, unpublished package containing controlled presentational components and design tokens:
+`@elzzes/ui` (folder `elzzes-ui-lib`) is an internal, unpublished package containing generic, controlled presentational components and design tokens:
 
-- The component set, variants, and slots are defined in [Design § Components](DESIGN.md#components); theme tokens are Tailwind CSS custom properties.
+- The library exposes `Button`, `Card`, `Display`, and `Keypad`; the web app maps calculator key roles to generic variants. Names, variants, and slots are defined in [Design § Components](DESIGN.md#components); theme tokens are Tailwind CSS custom properties.
 - Components receive formatted strings and callbacks; they hold no calculator state and know nothing about the API or operations.
 - Tailwind CSS v4 with tokenized colors, spacing, radii, and type. Light/dark via `prefers-color-scheme`.
 - Accessibility contract: real buttons, accessible names, visible focus, minimum target size, `aria-keyshortcuts` hints. Documented in [Design § Accessibility](DESIGN.md#accessibility).

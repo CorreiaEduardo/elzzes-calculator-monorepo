@@ -2,15 +2,15 @@
 
 `problem.md` is the source of truth for the project. These specs break it into reviewable slices and record the decisions behind them. When a spec and the brief disagree, the brief wins; when a spec and [`ARCHITECTURE.md`](../ARCHITECTURE.md) or [`openapi.yaml`](../../elzzes-calculator-api/docs/openapi.yaml) disagree, stop and reconcile before building.
 
-**Status:** backend implementation baseline, 2026-11-20. Specs 001–002 are backend-complete; UI acceptance is tracked in spec 003. Specs 003–004 remain scoped.
+**Status:** implementation baseline, 2026-11-20. Specs 001–003 are implemented with automated checks green; spec 003's manual responsive/screen-reader pass remains. Spec 004 remains scoped.
 
 ## Specs
 
 | # | Spec | Scope | Depends on | Status |
 | --- | --- | --- | --- | --- |
-| 001 | [Basic arithmetic operations](001-basic-arithmetic-operations/SPEC.md) | `add`, `subtract`, `multiply`, `divide`; shared request validation; basic keypad | — | In progress — backend implemented; UI in 003 |
-| 002 | [Advanced arithmetic operations](002-advanced-arithmetic-operations/SPEC.md) | `power`, `sqrt`, `percent`; unary/binary domains; advanced keys | 001 | In progress — backend implemented; UI in 003 |
-| 003 | [Calculator UI](003-calculator-ui/SPEC.md) | Entry model, formatting, TanStack Query + Zod API client, errors, keyboard, responsive, a11y; `@elzzes/ui` split; Storybook | 001, 002 | Scoped |
+| 001 | [Basic arithmetic operations](001-basic-arithmetic-operations/SPEC.md) | `add`, `subtract`, `multiply`, `divide`; shared request validation; basic keypad | — | Implemented |
+| 002 | [Advanced arithmetic operations](002-advanced-arithmetic-operations/SPEC.md) | `power`, `sqrt`, `percent`; unary/binary domains; advanced keys | 001 | Implemented |
+| 003 | [Calculator UI](003-calculator-ui/SPEC.md) | Entry model, formatting, TanStack Query + Zod API client, errors, keyboard, responsive, a11y; `@elzzes/ui` split; Storybook | 001, 002 | Implemented |
 | 004 | [Delivery and verification](004-delivery-and-verification/SPEC.md) | Compose/Nginx images, tests/coverage, CI, README/docs completeness, reviewer checklist | 001–003 | Scoped |
 
 ## Traceability to the brief

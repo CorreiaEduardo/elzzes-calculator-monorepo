@@ -1,6 +1,6 @@
 # 001 — Basic arithmetic operations
 
-**Status:** backend implemented (2026-11-20); UI acceptance remains under [spec 003](../003-calculator-ui/SPEC.md). Wire contract and examples: [`openapi.yaml`](../../../elzzes-calculator-api/docs/openapi.yaml). Operation behavior and edge cases below are canonical for these four operations. UI behavior: [Design](../../DESIGN.md). Implementation detail: [backend](../../../elzzes-calculator-api/docs/CONVENTIONS.md), [frontend](../../../elzzes-calculator-web/docs/CONVENTIONS.md).
+**Status:** implemented (2026-11-20), including the UI through [spec 003](../003-calculator-ui/SPEC.md). Wire contract and examples: [`openapi.yaml`](../../../elzzes-calculator-api/docs/openapi.yaml). Operation behavior and edge cases below are canonical for these four operations. UI behavior: [Design](../../DESIGN.md). Implementation detail: [backend](../../../elzzes-calculator-api/docs/CONVENTIONS.md), [frontend](../../../elzzes-calculator-web/docs/CONVENTIONS.md).
 
 ## What is it?
 

@@ -1,0 +1,18 @@
+@import '@elzzes/ui/styles.css';
+@source "../**/*.{ts,tsx}";
+
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--color-ui-page);
+}
