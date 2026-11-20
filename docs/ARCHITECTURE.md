@@ -1,6 +1,6 @@
 # Architecture
 
-**Status:** implementation baseline, stack agreed 2026-11-20. The API implements all seven operations and `GET /healthz`; the calculator UI, API client, and shared UI primitives are implemented. Spec 004 delivery/CI remains scoped. This document is canonical for system structure, request flow, state ownership, the numeric model, and deployment. The wire contract is canonical in [`openapi.yaml`](../elzzes-calculator-api/docs/openapi.yaml); operation behavior and edge cases in [spec 001](specs/001-basic-arithmetic-operations/SPEC.md) and [spec 002](specs/002-advanced-arithmetic-operations/SPEC.md); UI behavior in [Design](DESIGN.md); implementation details in the component conventions.
+**Status:** implementation baseline, stack agreed 2026-11-20. The API implements all seven operations and `GET /healthz`; the calculator UI, API client, and shared UI primitives are implemented. Spec 004 delivery is implemented: Docker Compose/Nginx, the root Makefile, GitHub Actions CI, and enforced coverage floors. This document is canonical for system structure, request flow, state ownership, the numeric model, and deployment. The wire contract is canonical in [`openapi.yaml`](../elzzes-calculator-api/docs/openapi.yaml); operation behavior and edge cases in [spec 001](specs/001-basic-arithmetic-operations/SPEC.md) and [spec 002](specs/002-advanced-arithmetic-operations/SPEC.md); UI behavior in [Design](DESIGN.md); implementation details in the component conventions.
 
 ## System context
 
@@ -154,11 +154,12 @@ docker compose up --build
 ```
 
 - Nginx serves the static SPA and proxies `/api/` and `/healthz` to `api:8080`. One origin, no CORS, no Node runtime in the final web image.
-- The two service Dockerfiles plus `compose.yaml` are the agreed reading of the brief's "Dockerfile to run frontend + backend together": `docker compose up` runs both. This assumption is recorded in [README § Quick start](../README.md#quick-start-docker-compose).
+- The two service Dockerfiles plus `compose.yaml` are the agreed reading of the brief's "Dockerfile to run frontend + backend together": `docker compose up` runs both. This assumption is recorded in [README § How to run](../README.md#how-to-run).
 - `PORT` defaults to `8080`. The stack is stateless and needs no volumes or secrets; `/healthz` is the probe.
 - Root and package `.dockerignore` files exclude `.git`, `node_modules`, build output, coverage, and local env files.
 - Images run as non-root where the base image permits; the final API image contains no Go toolchain or source.
-- Local development does not use the image: pnpm + Vite + `go run` as described above.
+- Local development does not use the image: `make dev` (or pnpm + Vite + `go run`) as described in [README § Local development](../README.md#local-development). The root `Makefile` (`install`, `dev`, `storybook`, `verify`, `compose-verify`) wraps the package scripts and adds no logic or dependency.
+- GitHub Actions runs the same `make verify` checks plus a Compose build-and-smoke job on push and pull requests ([spec 004](specs/004-delivery-and-verification/SPEC.md#ci)).
 
 **Rejected alternative:** a single Go image embedding the SPA via `go:embed`. It has fewer units, but couples every frontend build to the API image and moves static serving into the Go binary. The agreed topology keeps static serving in Nginx and the API focused on arithmetic.
 

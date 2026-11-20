@@ -31,7 +31,7 @@ When they conflict, the higher concern wins. Extra features never buy down corre
 6. **Validate at the boundary, trust inside.** HTTP input is validated once at the edge; domain functions receive validated, finite values. The client validates responses with Zod and improves UX with input rules, but never replaces server validation.
 7. **Errors are data.** The API carries stable codes; human copy belongs to the client.
 8. **Statelessness.** No database, session, persisted cache, or history. Restarting loses nothing because nothing is stored. TanStack Query manages a request, not persisted server state.
-9. **Accessibility and responsiveness are requirements.** Keyboard operation, screen-reader labels, AA contrast, touch targets, and a usable phone layout are part of "done".
+9. **Accessibility and responsiveness are requirements.** Keyboard operation, AA contrast, touch targets, and a usable phone layout are part of "done".
 10. **Simplicity budget.** Every dependency, abstraction, or process needs a requirement behind it. The agreed stack is Tailwind CSS v4, TanStack Query, Zod, Storybook, OpenAPI 3.1, Docker Compose, and GitHub Actions; add nothing beyond it without a requirement and user agreement. No database, auth, or state library.
 11. **Docs travel with the change.** A behavior change that leaves docs stale is unfinished. Each definition has one canonical home; other docs link to it rather than restating it.
 12. **Lean comments.** Default to none; naming and structure carry the *what*. Comment only constraints the code cannot show (timing races, ordering requirements, standing invariants).

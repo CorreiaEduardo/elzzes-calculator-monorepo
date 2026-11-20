@@ -137,7 +137,7 @@ The calculator is fully operable by keyboard. Shortcuts are conveniences, never 
 - Shortcuts ignore events with `Ctrl`/`Meta`/`Alt` so browser shortcuts keep working.
 - The global handler does not hijack `Enter`/`Space` when a button has focus; native button activation wins and prevents double-fire.
 - Mapped keys call `preventDefault()` (e.g., `/` quick-find, `Backspace` history navigation).
-- Buttons expose `aria-keyshortcuts` where a shortcut exists, so screen-reader users can discover them.
+- Buttons expose `aria-keyshortcuts` where a shortcut exists, so shortcuts are discoverable.
 
 ## Accessibility
 

@@ -30,7 +30,8 @@
 | Contract | OpenAPI 3.1 | Machine-readable contract shared by both layers. |
 | Tests | Go `testing`/`httptest`; Vitest + RTL + MSW; Playwright optional | Fast unit/component coverage; E2E optional. |
 | Delivery | Docker + Compose + Nginx | Reproducible local run; static SPA and API as separate containers on one origin. |
-| CI | GitHub Actions | Runs the same lint/test/build checks on push and PR. |
+| Local commands | Root `Makefile` | `install`, `dev`, `storybook`, `verify`, and `compose-verify` wrap the package scripts; no new dependencies or application logic. |
+| CI | GitHub Actions | Runs the same `make verify` checks plus a Compose smoke test on push and PR. |
 
 ## Boundaries
 
@@ -55,6 +56,7 @@
 | UI library implementation conventions | [UI library conventions](../elzzes-ui-lib/docs/CONVENTIONS.md) |
 | Invariants and decision rules | [PRINCIPLES.md](PRINCIPLES.md) |
 | Delivery, tests, coverage, CI verification | [spec 004](specs/004-delivery-and-verification/SPEC.md) |
+| Local run instructions (Docker, Makefile, Storybook) | [README § How to run](../README.md#how-to-run) |
 
 ## Rejected alternatives
 

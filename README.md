@@ -4,7 +4,66 @@ A full-stack calculator: a React + TypeScript single-page app backed by a statel
 
 The frontend owns input, interaction, formatting, and error presentation; it never evaluates arithmetic. The stack is React 19 + TypeScript + Vite + Tailwind CSS v4 + TanStack Query + Zod on the front end, Go standard library on the back end, OpenAPI 3.1 as the wire contract, pnpm workspaces, Storybook for the shared UI library, and Nginx + Docker Compose for delivery. GitHub Actions runs the verification checks.
 
-**Status:** specs 001–003 are implemented: the Go API exposes all seven operations, and the React app provides the calculator, typed API client, tests, and UI-library Storybook stories. Spec 004 (delivery/CI) remains scoped.
+**Status:** specs 001–004 are implemented (2026-11-20): the Go API exposes all seven operations, the React app provides the calculator, typed API client, tests, and UI-library Storybook stories, and delivery includes Docker Compose, a root Makefile, and GitHub Actions CI. The manual responsive review is complete.
+
+## How to run
+
+Prerequisites: Docker with Compose v2 for the containerized path. For local development without Docker: Node.js 24+, pnpm 12.21.0, and Go 1.27+. The `Makefile` wraps the common commands; the equivalent package commands are shown where useful.
+
+### Docker Compose
+
+Builds and runs the SPA and API together on one origin:
+
+```bash
+docker compose up --build
+```
+
+- App: <http://localhost:8080>
+- API health: <http://localhost:8080/healthz>
+
+`web` builds the SPA with Vite and serves it from unprivileged Nginx on `:8080`; Nginx proxies `/api` and `/healthz` to `api:8080`. Both services are stateless; no database, secrets, or cloud account is required. Stop the stack with `docker compose down` (or `make compose-down`).
+
+### Local development
+
+```bash
+make install   # pnpm install --frozen-lockfile + Go modules
+make dev       # API on :8080 and Vite on :5173
+```
+
+Open <http://localhost:5173>. Vite proxies `/api` to the API on `:8080`, matching the production same-origin model.
+
+To run each service in its own terminal:
+
+```bash
+make dev-api   # Go API: http://localhost:8080
+make dev-web   # Vite: http://localhost:5173
+```
+
+Without `make`, run the same steps directly:
+
+```bash
+pnpm install --frozen-lockfile
+(cd elzzes-calculator-api && go run ./cmd/api)
+pnpm --filter elzzes-calculator-web dev
+```
+
+### Storybook
+
+The `@elzzes/ui` component explorer is optional for running the calculator and serves on its own port:
+
+```bash
+make storybook   # http://localhost:6006
+# equivalent: pnpm --filter @elzzes/ui storybook
+```
+
+### Verify a change
+
+```bash
+make verify          # format, vet, tests, coverage floors, race, lint, typecheck, builds
+make compose-verify  # build the Compose stack, smoke-test /healthz and the API, then stop it
+```
+
+CI runs the same checks. The canonical procedure, coverage floor, and reviewer checklist are in [spec 004](docs/specs/004-delivery-and-verification/SPEC.md#verification-procedure).
 
 ## Operations
 
@@ -34,17 +93,6 @@ curl -s localhost:8080/api/v1/calculate -H 'Content-Type: text/plain' -d '{}'
 # {"error":{"code":"INVALID_CONTENT_TYPE","message":"Content-Type must be application/json"}}
 ```
 
-## Quick start (Docker Compose)
-
-```bash
-docker compose up --build
-```
-
-- App: http://localhost:8080
-- API health: http://localhost:8080/healthz
-
-`web` builds the SPA with Vite and serves it from unprivileged Nginx on `:8080`; Nginx proxies `/api` and `/healthz` to `api:8080`. Both services are stateless; no database, secrets, or cloud account. `docker compose down` stops them.
-
 ## Repository layout
 
 ```text
@@ -60,6 +108,9 @@ docker compose up --build
 │   ├── docs/CONVENTIONS.md    # UI library conventions
 │   └── stories/               # Storybook
 ├── docs/                      # architecture, design, decisions, principles, specs
+├── .github/workflows/ci.yml   # GitHub Actions: same checks as make verify + Compose smoke
+├── scripts/                   # check-go-coverage.sh (80% per-package floor)
+├── Makefile                   # local commands: install, dev, storybook, verify, compose
 ├── compose.yaml               # runs the web and api services together
 ├── pnpm-workspace.yaml        # pnpm workspace for the two JS packages
 ├── AGENTS.md                  # working agreements for contributors and agents
@@ -72,7 +123,7 @@ docker compose up --build
 - **`elzzes-ui-lib`** — internal package published as `@elzzes/ui`. Controlled presentational components, design tokens, Storybook stories. No state, network, or arithmetic.
 - **`docs/`** — principles, architecture, decisions, UI design, and the spec breakdown of `problem.md`.
 
-The two JavaScript packages are pnpm workspaces; the Go module is independent. Each service has its own Dockerfile; `compose.yaml` runs them together.
+The two JavaScript packages are pnpm workspaces; the Go module is independent. Each service has its own Dockerfile; `compose.yaml` runs them together. The `Makefile` is the local entry point (`make help` lists the targets) and CI invokes the same targets.
 
 ## Design decisions and assumptions
 
@@ -89,7 +140,8 @@ Decisions that shape the app:
 7. **Tailwind + a presentational UI library.** `@elzzes/ui` holds controlled components, design tokens, and Storybook stories; the web app stays logic and composition.
 8. **OpenAPI 3.1 as the contract.** One machine-readable source for paths, schemas, arity, statuses, and error codes; both layers pin to it.
 9. **Nginx + Compose delivery.** Separate static and API services on one origin; no CORS, no Node runtime in production.
-10. **GitHub Actions CI.** Lint, typecheck, tests, coverage, Storybook build, and Go vet/test/build on every push and pull request.
+10. **Makefile for local commands.** `make dev`, `make storybook`, `make verify`, and `make compose-verify` wrap the package scripts so local development does not require Docker and CI runs the same definitions. The Makefile adds no application logic or dependency.
+11. **GitHub Actions CI.** Go format/vet/test/race/build, web and UI lint/typecheck/tests/coverage, the SPA and Storybook builds, and a Compose smoke test on every push and pull request.
 
 **Assumptions**
 
@@ -137,3 +189,8 @@ Deliberately excluded to keep the deliverable focused ([brainstorm.md](brainstor
 - [`problem.md`](problem.md) is the challenge brief (the tech assessment itself) and the lighthouse for every trade-off. When a spec or doc disagrees with it, the brief wins.
 - [`brainstorm.md`](brainstorm.md) holds my early raw notes. Ideas beyond the brief (database, AWS emulator, auth) are recorded as out of scope rather than silently dropped.
 - [`001-extending-harness.md`](docs/prompts/001-extending-harness.md) a transcripted spoken brainstorm adjusted with a clarity focused prompt with Claude Code
+- [`002-creating-specs.md`](docs/prompts/002-creating-specs.md) the dictated brainstorm that turned `problem.md` into specs 001–004 before implementation
+- [`003-scaffolding-go.md`](docs/prompts/003-scaffolding-go.md) the scaffold prompt for the Go module, Ports & Adapters layout, config, logging, and `/healthz`
+- [`004-implementing-backend.md`](docs/prompts/004-implementing-backend.md) the prompt that implemented specs 001–002, including the transport-to-calculator boundary correction
+- [`005-implementing-frontend.md`](docs/prompts/005-implementing-frontend.md) the prompt that implemented the calculator UI and UI library
+- [`006-infra-and-deliverables`](docs/prompts/006-infra-and-deliverables) the prompt that closed spec 004: CI, Makefile, coverage enforcement, and README run instructions

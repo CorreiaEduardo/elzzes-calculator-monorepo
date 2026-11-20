@@ -25,6 +25,11 @@ Notable changes, newest first. Implementation changes are added as they land; th
 - Calculator UI for spec 003: immediate-execution reducer with request plans/continuations and stale-response guards, pure entry/formatting/expression modules, a 10-second `AbortController` API client with strict Zod validation, TanStack Query mutation orchestration, keyboard mapping, and accessible keypad composition.
 - Generic UI library primitives: `Button` (six variants, four sizes), `Card`, `Display` (expression live region, value, alert, busy), and `Keypad` (accessory strip plus grid), with `--color-ui-*` light/dark tokens and Storybook stories/tests.
 - Frontend tooling for the agreed stack: TanStack Query, Zod, MSW, user-event, coverage provider, Storybook; Vitest setup files, threads pool, `/api` dev proxy, and `test:coverage` scripts.
+- Root `Makefile`: `install`, `dev` (API + Vite), `dev-api`, `dev-web`, `storybook`, per-layer test/lint/typecheck/build targets, `verify`, and `compose-up`/`compose-verify`/`compose-down`, so the app runs without Docker.
+- `scripts/check-go-coverage.sh`: enforces the ≥80% floor per Go `internal/...` package, including a missing-tests check.
+- GitHub Actions CI (`.github/workflows/ci.yml`): Go format/vet/test/coverage/race/build, web and UI lint/typecheck/test/coverage, SPA and Storybook builds, coverage artifacts, and a Compose build-and-smoke job; jobs invoke the same Makefile targets.
+- Vitest coverage thresholds (80% statements/lines) for the web and UI packages, turning the documented floor into a failing check.
+- README **How to run**: prominent Docker Compose, local Makefile, manual command, verification, and Storybook subsections, plus the new layout entries.
 
 ### Changed
 
@@ -38,9 +43,11 @@ Notable changes, newest first. Implementation changes are added as they land; th
 - Refined calculate validation: field-type errors now use `UNKNOWN_OPERATION`/`INVALID_OPERAND` instead of the misleading `INVALID_JSON`; operand errors name their index; duplicate keys are documented as last-value-wins; non-limit body-read failures are logged for diagnostics.
 - Generalized DESIGN's calculator-specific component names to the generic `Card`, `Button`, `Display`, and `Keypad` primitives; documented the web-to-variant mapping and resolved UI ambiguities (error recovery, unary labels, power glyph, names, shortcuts, formatting, 4xx mapping).
 - Updated the web/UI READMEs, conventions, architecture status, spec/INDEX/AGENTS statuses, and `.gitignore` coverage entry for the implemented frontend.
+- Marked spec 004 implemented and added its Makefile, coverage-enforcement, CI, and README requirements; updated README, AGENTS, INDEX, ARCHITECTURE, and DECISIONS to match the delivered Docker/Compose, Makefile, and CI setup.
 
 ### Notes
 
-- The Go backend and calculator UI implement specs 001–003. Spec 004 (delivery, CI, Compose verification) remains scoped. `problem.md` remains authoritative; `brainstorm.md` is raw early notes, not a commitment.
-- Frontend verification: both packages pass typecheck, lint, tests, and coverage (web 94.8%, UI 100% of instrumented component code); `build-storybook` and the production web build pass. Docker/Compose remain unverified in this environment.
-- Manual responsive and screen-reader checked manually by reviewer; automated tests cover roles, names, live regions, alerts, busy state, keyboard mapping, and request behavior.
+- `problem.md` remains authoritative; `brainstorm.md` is raw early notes, not a commitment.
+- Frontend verification: both packages pass typecheck, lint, tests, and coverage (web 94.8%, UI 100% of instrumented component code); `build-storybook` and the production web build pass.
+- Delivery verification: frontend lint/typecheck passed before these changes; Go and Docker were unavailable in the working environment, so `make verify` and `make compose-verify` were not executed here. CI runs both.
+- Manual responsive review completed; automated tests cover roles, names, live regions, alerts, busy state, keyboard mapping, and request behavior.
