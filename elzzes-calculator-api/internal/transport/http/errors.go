@@ -1,6 +1,13 @@
 package http
 
-import nethttp "net/http"
+import (
+	"errors"
+	nethttp "net/http"
+
+	"elzzes-calculator-api/internal/calculator"
+)
+
+const msgInternalError = "internal error"
 
 // ErrorCode mirrors the ErrorCode enum in docs/openapi.yaml, which is canonical.
 type ErrorCode string
@@ -32,4 +39,43 @@ type errorEnvelope struct {
 
 func writeError(w nethttp.ResponseWriter, status int, code ErrorCode, message string) {
 	writeJSON(w, status, errorEnvelope{Error: errorDetail{Code: code, Message: message}})
+}
+
+type calculatorErrorMapping struct {
+	err     error
+	status  int
+	code    ErrorCode
+	message string
+}
+
+var calculatorErrorMappings = [...]calculatorErrorMapping{
+	{
+		err:     calculator.ErrDivisionByZero,
+		status:  nethttp.StatusUnprocessableEntity,
+		code:    CodeDivisionByZero,
+		message: "cannot divide by zero",
+	},
+	{
+		err:     calculator.ErrNegativeSquareRoot,
+		status:  nethttp.StatusUnprocessableEntity,
+		code:    CodeNegativeSquareRoot,
+		message: "square root requires a non-negative operand",
+	},
+	{
+		err:     calculator.ErrNonFiniteResult,
+		status:  nethttp.StatusUnprocessableEntity,
+		code:    CodeNonFiniteResult,
+		message: "result is not finite",
+	},
+}
+
+// writeCalculatorError writes the mapped 422 and reports whether err was known.
+func writeCalculatorError(w nethttp.ResponseWriter, err error) bool {
+	for _, mapping := range calculatorErrorMappings {
+		if errors.Is(err, mapping.err) {
+			writeError(w, mapping.status, mapping.code, mapping.message)
+			return true
+		}
+	}
+	return false
 }

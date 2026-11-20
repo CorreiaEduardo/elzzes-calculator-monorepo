@@ -1,3 +1,9 @@
 package calculator
 
-// Domain errors land with spec 001.
+import "errors"
+
+var (
+	ErrDivisionByZero     = errors.New("cannot divide by zero")
+	ErrNegativeSquareRoot = errors.New("square root requires a non-negative operand")
+	ErrNonFiniteResult    = errors.New("result is not finite")
+)

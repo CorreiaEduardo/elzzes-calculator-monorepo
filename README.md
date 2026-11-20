@@ -4,6 +4,8 @@ A full-stack calculator: a React + TypeScript single-page app backed by a statel
 
 The frontend owns input, interaction, formatting, and error presentation; it never evaluates arithmetic. The stack is React 19 + TypeScript + Vite + Tailwind CSS v4 + TanStack Query + Zod on the front end, Go standard library on the back end, OpenAPI 3.1 as the wire contract, pnpm workspaces, Storybook for the shared UI library, and Nginx + Docker Compose for delivery. GitHub Actions runs the verification checks.
 
+**Status:** the Go API implements all seven operations. The React app is still the Vite starter; the calculator UI and API client are spec 003.
+
 ## Operations
 
 Seven operations, all through one endpoint:
@@ -12,6 +14,25 @@ Seven operations, all through one endpoint:
 - **Advanced (optional in the brief, included):** `power`, `sqrt`, `percent`.
 
 Operation semantics, arity, and edge cases are canonical in [spec 001](docs/specs/001-basic-arithmetic-operations/SPEC.md) and [spec 002](docs/specs/002-advanced-arithmetic-operations/SPEC.md). The wire contract is [`openapi.yaml`](elzzes-calculator-api/docs/openapi.yaml); client behavior is in [Design](docs/DESIGN.md).
+
+### API examples
+
+```bash
+curl -s localhost:8080/api/v1/calculate -H 'Content-Type: application/json' \
+  -d '{"operation":"add","operands":[12.5,7.5]}'
+# {"operation":"add","operands":[12.5,7.5],"result":20}
+
+curl -s localhost:8080/api/v1/calculate -H 'Content-Type: application/json' \
+  -d '{"operation":"sqrt","operands":[144]}'
+# {"operation":"sqrt","operands":[144],"result":12}
+
+curl -s localhost:8080/api/v1/calculate -H 'Content-Type: application/json' \
+  -d '{"operation":"divide","operands":[10,0]}'
+# {"error":{"code":"DIVISION_BY_ZERO","message":"cannot divide by zero"}}
+
+curl -s localhost:8080/api/v1/calculate -H 'Content-Type: text/plain' -d '{}'
+# {"error":{"code":"INVALID_CONTENT_TYPE","message":"Content-Type must be application/json"}}
+```
 
 ## Quick start (Docker Compose)
 

@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"elzzes-calculator-api/internal/calculator"
 )
 
 type fakeLogger struct{}
@@ -14,7 +16,7 @@ func (fakeLogger) Info(string, ...any)  {}
 func (fakeLogger) Error(string, ...any) {}
 
 func TestHandlerHealth(t *testing.T) {
-	handler := NewHandler(fakeLogger{})
+	handler := NewHandler(fakeLogger{}, calculator.New())
 
 	rec := serve(handler, nethttp.MethodGet, "/healthz")
 	if rec.Code != nethttp.StatusOK {
@@ -32,7 +34,7 @@ func TestHandlerHealth(t *testing.T) {
 }
 
 func TestHandlerHealthHead(t *testing.T) {
-	server := httptest.NewServer(NewHandler(fakeLogger{}))
+	server := httptest.NewServer(NewHandler(fakeLogger{}, calculator.New()))
 	defer server.Close()
 
 	req, err := nethttp.NewRequest(nethttp.MethodHead, server.URL+"/healthz", nil)
@@ -58,7 +60,7 @@ func TestHandlerHealthHead(t *testing.T) {
 }
 
 func TestHandlerHealthMethodNotAllowed(t *testing.T) {
-	handler := NewHandler(fakeLogger{})
+	handler := NewHandler(fakeLogger{}, calculator.New())
 
 	rec := serve(handler, nethttp.MethodPost, "/healthz")
 	if rec.Code != nethttp.StatusMethodNotAllowed {
@@ -74,9 +76,9 @@ func TestHandlerHealthMethodNotAllowed(t *testing.T) {
 }
 
 func TestHandlerUnknownAPIRoute(t *testing.T) {
-	handler := NewHandler(fakeLogger{})
+	handler := NewHandler(fakeLogger{}, calculator.New())
 
-	rec := serve(handler, nethttp.MethodPost, "/api/v1/calculate")
+	rec := serve(handler, nethttp.MethodPost, "/api/v1/unknown")
 	if rec.Code != nethttp.StatusNotFound {
 		t.Fatalf("status = %d, want 404", rec.Code)
 	}

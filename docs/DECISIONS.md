@@ -1,6 +1,6 @@
 # Decisions
 
-**Status:** scaffold baseline, 2026-11-20. This is the high-level decision index, not a second specification. Each definition has one canonical home; update that document, not this page.
+**Status:** backend implementation baseline, 2026-11-20. This is the high-level decision index, not a second specification. Each definition has one canonical home; update that document, not this page.
 
 ## Product shape
 
@@ -12,7 +12,7 @@
 
 ## Architecture style
 
-- Lightweight Ports & Adapters: the calculator core is pure; `transport/http` defines the `Logger` capability it consumes, `logger` provides the slog adapter, and `config` owns environment loading. Ports are consumer-owned; there is no central ports package.
+- Lightweight Ports & Adapters: the calculator core is pure; `transport/http` defines the `Logger` and `Calculator` capabilities it consumes, `logger` provides the slog adapter, and `config` owns environment loading. Ports are consumer-owned; there is no central ports package. The transport may depend on the calculator's public API; the calculator never depends on transport or HTTP.
 - One-word package and file names where a plain word works (`config`, `logger`, `http`, `env`), not compound placeholders.
 - Rationale and layer rules: [PRINCIPLES § Invariants](PRINCIPLES.md#invariants), [Architecture § Backend](ARCHITECTURE.md#backend), [backend conventions](../elzzes-calculator-api/docs/CONVENTIONS.md).
 
