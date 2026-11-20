@@ -15,6 +15,11 @@ Notable changes, newest first. Implementation changes are added as they land; th
 - Package READMEs for the API, web app, and shared UI library.
 - Component conventions: [backend](../elzzes-calculator-api/docs/CONVENTIONS.md), [frontend](../elzzes-calculator-web/docs/CONVENTIONS.md), [UI library](../elzzes-ui-lib/docs/CONVENTIONS.md).
 - Complete OpenAPI 3.1 contract in [`elzzes-calculator-api/docs/openapi.yaml`](../elzzes-calculator-api/docs/openapi.yaml).
+- Go API scaffold: `go.mod` (Go 1.27, stdlib only), `cmd/api` composition root, lightweight Ports & Adapters layout (`internal/calculator` core placeholder, `internal/transport/http` net/http adapter with a consumer-owned `Logger` port and middleware, `internal/logger` slog adapter, `internal/config` environment loader), structured request logging, panic recovery, JSON `404`/`405` routing with `Allow`, config validation, graceful shutdown, and a working `GET /healthz`.
+- Frontend scaffold: root pnpm workspace (`pnpm-workspace.yaml` + lockfile); `elzzes-calculator-web` with React 19, TypeScript, Vite, Tailwind CSS v4, ESLint/Prettier/EditorConfig configs, and the Vite starter screen rendering `@elzzes/ui`; `elzzes-ui-lib` (`@elzzes/ui`) with a Vite library config, Tailwind `@theme` color tokens, and a controlled `Button` component (variants and sizes) exported with its types.
+- Web delivery: multi-stage `elzzes-calculator-web/Dockerfile` (pnpm workspace install, Vite build, unprivileged Nginx on `:8080`), `nginx.conf` with SPA history fallback and `/api`/`/healthz` proxies, root `.dockerignore`, and `compose.yaml` running `web` and `api` on one origin.
+- Multi-stage non-root `Dockerfile` and `.dockerignore` for the API. Docker was unavailable locally, so the image was written but not built.
+- Table-driven tests for config loading, the logging adapter, routing `404`/`405`, middleware, panic recovery, the error envelope, and health.
 
 ### Changed
 
@@ -22,7 +27,10 @@ Notable changes, newest first. Implementation changes are added as they land; th
 - Rewrote [`docs/DECISIONS.md`](DECISIONS.md) as a high-level decision index; detailed implementation rules moved to the component conventions.
 - Made one document canonical per topic and replaced duplicated definitions with links: OpenAPI for the wire contract, specs 001–002 for operation behavior, DESIGN for UI behavior, ARCHITECTURE for structure/numeric model/deployment, spec 004 for verification.
 - Updated README, AGENTS, package READMEs, INDEX, and specs to the canonical links and `cmd/api`/pnpm commands.
+- Rewrote the backend conventions and the architecture's backend section around the lightweight Ports & Adapters design; added consumer-owned-ports and plain-names invariants to PRINCIPLES and the decision index. The API README now documents the runnable scaffold, health smoke, and Docker build.
 
 ### Notes
 
 - No calculator implementation yet; the repository has scaffolding only. `problem.md` remains authoritative; `brainstorm.md` is raw early notes, not a commitment.
+- `POST /api/v1/calculate` is intentionally unregistered in the scaffold; unknown `/api` paths return the contract's JSON `404 NOT_FOUND` until spec 001 lands.
+- Web and UI packages are scaffolds: the web app still renders the Vite starter screen, and the calculator UI, API client, and Storybook stories are not implemented.

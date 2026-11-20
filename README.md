@@ -13,6 +13,17 @@ Seven operations, all through one endpoint:
 
 Operation semantics, arity, and edge cases are canonical in [spec 001](docs/specs/001-basic-arithmetic-operations/SPEC.md) and [spec 002](docs/specs/002-advanced-arithmetic-operations/SPEC.md). The wire contract is [`openapi.yaml`](elzzes-calculator-api/docs/openapi.yaml); client behavior is in [Design](docs/DESIGN.md).
 
+## Quick start (Docker Compose)
+
+```bash
+docker compose up --build
+```
+
+- App: http://localhost:8080
+- API health: http://localhost:8080/healthz
+
+`web` builds the SPA with Vite and serves it from unprivileged Nginx on `:8080`; Nginx proxies `/api` and `/healthz` to `api:8080`. Both services are stateless; no database, secrets, or cloud account. `docker compose down` stops them.
+
 ## Repository layout
 
 ```text

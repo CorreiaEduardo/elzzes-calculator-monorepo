@@ -1,0 +1,17 @@
+services:
+  api:
+    build:
+      context: ./elzzes-calculator-api
+    environment:
+      PORT: "8080"
+    expose:
+      - "8080"
+
+  web:
+    build:
+      context: .
+      dockerfile: elzzes-calculator-web/Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "8080:8080"

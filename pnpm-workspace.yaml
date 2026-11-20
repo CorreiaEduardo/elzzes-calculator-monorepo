@@ -1,0 +1,5 @@
+packages:
+  - elzzes-calculator-web
+  - elzzes-ui-lib
+allowBuilds:
+  esbuild: true

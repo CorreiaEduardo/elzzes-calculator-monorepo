@@ -23,6 +23,16 @@ pnpm --filter elzzes-calculator-web dev   # http://localhost:5173
 
 The dev server proxies `/api` to `http://localhost:8080`; start the API first. In production Nginx serves the SPA and proxies `/api/` and `/healthz` to the Go service on one origin.
 
+## Docker
+
+The root `compose.yaml` builds this SPA and serves it through Nginx alongside the API:
+
+```bash
+docker compose up --build   # http://localhost:8080
+```
+
+The image is multi-stage: pnpm workspace install and Vite build, then unprivileged Nginx serving `dist/` and proxying `/api` and `/healthz` to `api:8080`.
+
 ## Scripts
 
 | Command | Purpose |

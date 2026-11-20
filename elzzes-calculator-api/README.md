@@ -2,7 +2,7 @@
 
 The Go REST service for Elzzes Calculator. It owns every arithmetic operation; clients never compute results. The service is stateless: each request is independent and nothing is persisted. It does not serve the SPA — Nginx does that in production.
 
-**Status:** documentation baseline and scaffolding — implementation is specified in [spec 001](../docs/specs/001-basic-arithmetic-operations/SPEC.md) and [spec 002](../docs/specs/002-advanced-arithmetic-operations/SPEC.md). Stack: Go standard library (`net/http`, `encoding/json`, `log/slog`), OpenAPI 3.1, Docker.
+**Status:** runnable scaffold — `GET /healthz` is live; `POST /api/v1/calculate` is intentionally not registered until spec 001. Implementation is specified in [spec 001](../docs/specs/001-basic-arithmetic-operations/SPEC.md) and [spec 002](../docs/specs/002-advanced-arithmetic-operations/SPEC.md). Stack: Go standard library (`net/http`, `encoding/json`, `log/slog`), OpenAPI 3.1, Docker.
 
 ## Responsibilities
 
@@ -14,36 +14,53 @@ The Go REST service for Elzzes Calculator. It owns every arithmetic operation; c
 
 ## Run
 
+Requires Go 1.27 or newer.
+
 ```bash
 cd elzzes-calculator-api
 go run ./cmd/api              # PORT defaults to 8080
+curl -s localhost:8080/healthz
 ```
 
 Development is API-only; Vite serves the SPA on `:5173` and proxies `/api`. In production Nginx serves the SPA and proxies `/api/` and `/healthz` to this service.
+
+## Docker
+
+```bash
+docker build -t elzzes-calculator-api .
+docker run --rm -p 8080:8080 elzzes-calculator-api
+```
+
+The multi-stage image builds the static binary and runs it as a non-root user in a minimal runtime. The root [`compose.yaml`](../compose.yaml) runs this image with the web image; Nginx proxies `/api` and `/healthz` to `api:8080` on one origin ([spec 004](../docs/specs/004-delivery-and-verification/SPEC.md)).
 
 ## Configuration
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `PORT` | `8080` | HTTP listen port |
+| `PORT` | `8080` | HTTP listen port (integer `1`–`65535`) |
 
 No database, secrets, or external services.
 
 ## Test
 
 ```bash
+gofmt -l .
 go vet ./...
+go build -o /tmp/elzzes-api ./cmd/api
+go test ./...
 go test ./... -coverprofile=coverage.out
 go tool cover -func=coverage.out
 go tool cover -html=coverage.out
 go test -race ./...
 ```
 
+Coverage is reported for `./internal/...`; `cmd/api` is composition wiring.
+
 The coverage target and edge-case rule, including CI, are canonical in [spec 004](../docs/specs/004-delivery-and-verification/SPEC.md).
 
 ## Conventions and layout
 
-The layout, naming, error handling, testing, and logging rules are canonical in [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md). High-level structure: `cmd/api/`, `internal/features/calculator/{domain,http}/`, `internal/features/commons/errors/`, `internal/config/`.
+The layout, naming, error handling, testing, and logging rules are canonical in [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md). High-level structure: `cmd/api/` (composition root), `internal/calculator/` (core), `internal/transport/http/` (net/http adapter and its consumer-owned `Logger` port), `internal/logger/` (slog adapter), and `internal/config/` (environment loading).
 
 ## Boundaries
 

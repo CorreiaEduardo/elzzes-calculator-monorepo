@@ -1,6 +1,6 @@
 # Architecture
 
-**Status:** planned baseline, stack agreed 2026-11-20. No calculator implementation has landed; the repository has scaffolding only. This document is canonical for system structure, request flow, state ownership, the numeric model, and deployment. The wire contract is canonical in [`openapi.yaml`](../elzzes-calculator-api/docs/openapi.yaml); operation behavior and edge cases in [spec 001](specs/001-basic-arithmetic-operations/SPEC.md) and [spec 002](specs/002-advanced-arithmetic-operations/SPEC.md); UI behavior in [Design](DESIGN.md); implementation details in the component conventions.
+**Status:** scaffold baseline, stack agreed 2026-11-20. The API has a runnable health-only scaffold; no calculator implementation has landed. This document is canonical for system structure, request flow, state ownership, the numeric model, and deployment. The wire contract is canonical in [`openapi.yaml`](../elzzes-calculator-api/docs/openapi.yaml); operation behavior and edge cases in [spec 001](specs/001-basic-arithmetic-operations/SPEC.md) and [spec 002](specs/002-advanced-arithmetic-operations/SPEC.md); UI behavior in [Design](DESIGN.md); implementation details in the component conventions.
 
 ## System context
 
@@ -20,9 +20,10 @@
                                 ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  api service: Go (elzzes-calculator-api)                        │
-│    internal/features/calculator/domain   pure arithmetic       │
-│    internal/features/calculator/http     routing/validation    │
-│    internal/features/commons/errors      error envelope         │
+│    internal/calculator                pure arithmetic core     │
+│    internal/transport/http            net/http adapter         │
+│    internal/logger                    slog adapter             │
+│    internal/config                    environment config      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -49,8 +50,8 @@ Implementation details live in the component conventions: [backend](../elzzes-ca
 
 1. The user presses a key. The web reducer decides whether this is input editing or a calculation.
 2. Calculations go through a TanStack Query mutation and the typed API client as `POST /api/v1/calculate` with `operation` and `operands`.
-3. The HTTP adapter validates transport and payload, then calls exactly one pure function in `domain`.
-4. Domain success becomes `200 {"operation": ..., "operands": ..., "result": ...}`; a domain failure becomes a documented `4xx` code; an unexpected failure is logged and becomes `500 INTERNAL_ERROR`.
+3. The HTTP adapter validates transport and payload, then calls the calculator core through its port.
+4. Core success becomes `200 {"operation": ..., "operands": ..., "result": ...}`; a domain failure becomes a documented `4xx` code; an unexpected failure is logged and becomes `500 INTERNAL_ERROR`.
 5. The client validates the response with Zod, maps it to a display value or user-facing error, formats it, and announces the outcome.
 6. The service stores nothing. Every calculation is independent.
 
@@ -58,11 +59,11 @@ The client is deliberately never the authority. It may reject obviously invalid 
 
 ## Backend
 
-The service has two layers: `domain` (pure operations and domain errors) and `http` (routing, strict decoding, validation, status/code mapping, health), plus shared error helpers and config. The exact layout, naming, error handling, testing, and logging rules are canonical in [backend conventions](../elzzes-calculator-api/docs/CONVENTIONS.md).
+The service is a lightweight Ports & Adapters design: `internal/calculator` is the pure core; `internal/transport/http` is the net/http adapter (routing, middleware, strict decoding, validation, status/code mapping, JSON error envelope, health) and declares the `Logger` capability it needs in its own package; `internal/logger` implements that port with `log/slog`; `internal/config` loads environment configuration. Ports are consumer-owned — there is no central ports package. The core never imports `net/http`, `log/slog`, or `os`, so replacing the transport, logger, or configuration source touches only that package and the composition root. `cmd/api` is the only place adapters meet. The exact layout, naming, error handling, testing, and logging rules are canonical in [backend conventions](../elzzes-calculator-api/docs/CONVENTIONS.md).
 
 ### HTTP stack
 
-Go standard library only: `net/http` with method/pattern routing, `encoding/json`, `log/slog`. The service enforces the body cap from the OpenAPI contract, strict JSON decoding, JSON content type, panic recovery, request logging, explicit timeouts, graceful shutdown, and JSON `404`/`405` responses. It serves no static files and sets no CORS headers: Nginx serves the SPA and proxies the API on one origin; the Vite dev proxy preserves that model. Exact middleware, validation, and error-mapping rules are canonical in [backend conventions](../elzzes-calculator-api/docs/CONVENTIONS.md).
+Go standard library only: `net/http` with method/pattern routing, `encoding/json`, `log/slog`. The service enforces the body cap from the OpenAPI contract, strict JSON decoding, JSON content type, panic recovery, request logging, explicit timeouts, graceful shutdown, and JSON `404`/`405` responses. All of this lives in the `internal/transport/http` adapter; `log/slog` is confined to `internal/logger`. It serves no static files and sets no CORS headers: Nginx serves the SPA and proxies the API on one origin; the Vite dev proxy preserves that model. Exact middleware, validation, and error-mapping rules are canonical in [backend conventions](../elzzes-calculator-api/docs/CONVENTIONS.md).
 
 ## API contract
 
@@ -131,8 +132,8 @@ Component conventions: [UI library](../elzzes-ui-lib/docs/CONVENTIONS.md).
 
 | Layer | Tools | Covers |
 | --- | --- | --- |
-| Go domain (`calculator/domain`) | `go test`, table-driven | every operation, documented edge cases, float comparisons with tolerance |
-| Go HTTP (`calculator/http`) | `httptest` | status/code mapping, strict decoding, limits, health, method/route handling |
+| Go core (`internal/calculator`) | `go test`, table-driven | every operation, documented edge cases, float comparisons with tolerance |
+| Go HTTP (`internal/transport/http`) | `httptest` | status/code mapping, strict decoding, limits, health, method/route handling |
 | Web logic | Vitest | reducer transitions, entry rules, formatting, error mapping |
 | Web UI | Vitest + React Testing Library + user-event | keypad, keyboard parity, loading/error states, accessible roles/names |
 | Web API client | Vitest + MSW | success, 4xx/422, 5xx, timeout/network failure, malformed response, abort; fixtures mirror the OpenAPI contract |

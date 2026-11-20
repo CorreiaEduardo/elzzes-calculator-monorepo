@@ -35,6 +35,8 @@ When they conflict, the higher concern wins. Extra features never buy down corre
 10. **Simplicity budget.** Every dependency, abstraction, or process needs a requirement behind it. The agreed stack is Tailwind CSS v4, TanStack Query, Zod, Storybook, OpenAPI 3.1, Docker Compose, and GitHub Actions; add nothing beyond it without a requirement and user agreement. No database, auth, or state library.
 11. **Docs travel with the change.** A behavior change that leaves docs stale is unfinished. Each definition has one canonical home; other docs link to it rather than restating it.
 12. **Lean comments.** Default to none; naming and structure carry the *what*. Comment only constraints the code cannot show (timing races, ordering requirements, standing invariants).
+13. **Consumer-owned ports.** A boundary interface is defined by the layer that needs the capability, in that layer's package (for example `transport/http/logger.go`), and implemented by the provider (`internal/logger`). No shared `ports` package; no interface before a real replacement boundary exists.
+14. **Plain names.** Prefer one-word names for packages, files, and abstractions (`config`, `logger`, `http`, `env`). Avoid compound placeholders when a plain word is accurate.
 
 ## Decision rules
 

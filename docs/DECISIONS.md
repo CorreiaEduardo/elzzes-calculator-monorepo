@@ -1,6 +1,6 @@
 # Decisions
 
-**Status:** documentation baseline, 2026-11-20. This is the high-level decision index, not a second specification. Each definition has one canonical home; update that document, not this page.
+**Status:** scaffold baseline, 2026-11-20. This is the high-level decision index, not a second specification. Each definition has one canonical home; update that document, not this page.
 
 ## Product shape
 
@@ -9,6 +9,12 @@
 - Immediate-execution, two-operand calculator interaction; unary keys transform the displayed value. The client parses input and formats output; it never computes.
 - No persistence, accounts, history, or authentication. Single-user, local/demo scope.
 - In production the SPA and API are separate services joined by Nginx on one origin.
+
+## Architecture style
+
+- Lightweight Ports & Adapters: the calculator core is pure; `transport/http` defines the `Logger` capability it consumes, `logger` provides the slog adapter, and `config` owns environment loading. Ports are consumer-owned; there is no central ports package.
+- One-word package and file names where a plain word works (`config`, `logger`, `http`, `env`), not compound placeholders.
+- Rationale and layer rules: [PRINCIPLES § Invariants](PRINCIPLES.md#invariants), [Architecture § Backend](ARCHITECTURE.md#backend), [backend conventions](../elzzes-calculator-api/docs/CONVENTIONS.md).
 
 ## Stack
 
