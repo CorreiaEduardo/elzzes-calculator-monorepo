@@ -1,0 +1,305 @@
+openapi: 3.1.0
+
+info:
+  title: Elzzes Calculator API
+  version: 1.0.0
+  description: |
+    Canonical wire contract for the Elzzes Calculator API. The service is
+    stateless: every request is independent and nothing is persisted.
+
+    Request bodies are limited to 4 KiB and must use
+    `Content-Type: application/json`. Unknown request fields are rejected.
+    `message` is developer-facing; the client owns user-facing copy.
+
+    Unknown paths under `/api/` return `404 NOT_FOUND`; a wrong method for a
+    known API path returns `405 METHOD_NOT_ALLOWED` with an `Allow` header.
+  contact:
+    name: Elzzes Calculator
+
+servers:
+  - url: http://localhost:8080
+    description: Local development API and production same-origin through Nginx
+
+paths:
+  /api/v1/calculate:
+    post:
+      summary: Perform one calculation
+      description: |
+        The operation selects the arity: `sqrt` and `percent` take exactly one
+        operand; all other operations take exactly two. Operands are IEEE-754
+        binary64 values. The result is unrounded; negative zero is normalized
+        to `0`.
+      operationId: calculate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculateRequest'
+            examples:
+              add:
+                summary: Addition
+                value:
+                  operation: add
+                  operands: [12.5, 7.5]
+              sqrt:
+                summary: Square root
+                value:
+                  operation: sqrt
+                  operands: [144]
+      responses:
+        '200':
+          description: Calculation result. The response echoes the operation and operands.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculateResponse'
+              examples:
+                add:
+                  value:
+                    operation: add
+                    operands: [12.5, 7.5]
+                    result: 20
+                sqrt:
+                  value:
+                    operation: sqrt
+                    operands: [144]
+                    result: 12
+                percent:
+                  value:
+                    operation: percent
+                    operands: [12.5]
+                    result: 0.125
+        '400':
+          description: |
+            Malformed request: missing or invalid JSON, wrong top-level type,
+            unknown field, missing/unknown operation, wrong operand count, or a
+            non-number/out-of-range operand.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidJson:
+                  value:
+                    error:
+                      code: INVALID_JSON
+                      message: request body is not valid JSON
+                unknownField:
+                  value:
+                    error:
+                      code: UNKNOWN_FIELD
+                      message: unknown field "precision"
+                unknownOperation:
+                  value:
+                    error:
+                      code: UNKNOWN_OPERATION
+                      message: unknown operation "modulo"
+                invalidOperandCount:
+                  value:
+                    error:
+                      code: INVALID_OPERAND_COUNT
+                      message: sqrt expects 1 operand
+                invalidOperand:
+                  value:
+                    error:
+                      code: INVALID_OPERAND
+                      message: operand must be a JSON number
+        '405':
+          description: Wrong method for this path.
+          headers:
+            Allow:
+              description: Allowed methods for the path.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                methodNotAllowed:
+                  value:
+                    error:
+                      code: METHOD_NOT_ALLOWED
+                      message: method GET is not allowed
+        '413':
+          description: Request body exceeds 4 KiB.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                payloadTooLarge:
+                  value:
+                    error:
+                      code: PAYLOAD_TOO_LARGE
+                      message: request body exceeds 4 KiB
+        '415':
+          description: Content-Type is not application/json.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidContentType:
+                  value:
+                    error:
+                      code: INVALID_CONTENT_TYPE
+                      message: Content-Type must be application/json
+        '422':
+          description: |
+            Well-formed request whose result is undefined: division by zero,
+            square root of a negative operand, or a non-finite result
+            (overflow or undefined power).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                divisionByZero:
+                  value:
+                    error:
+                      code: DIVISION_BY_ZERO
+                      message: cannot divide by zero
+                negativeSquareRoot:
+                  value:
+                    error:
+                      code: NEGATIVE_SQUARE_ROOT
+                      message: square root requires a non-negative operand
+                nonFiniteResult:
+                  value:
+                    error:
+                      code: NON_FINITE_RESULT
+                      message: result is not finite
+        '500':
+          description: Unexpected server failure; logged and safe to retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internalError:
+                  value:
+                    error:
+                      code: INTERNAL_ERROR
+                      message: internal error
+
+  /healthz:
+    get:
+      summary: Liveness probe
+      operationId: health
+      responses:
+        '200':
+          description: Service is alive. There are no dependencies to check.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                ok:
+                  value:
+                    status: ok
+
+components:
+  schemas:
+    Operation:
+      type: string
+      enum: [add, subtract, multiply, divide, power, sqrt, percent]
+      description: |
+        Fixed operation vocabulary. Arity is 1 for `sqrt` and `percent`; 2 for
+        all other operations.
+
+    CalculateRequest:
+      description: |
+        Exactly two fields. The operation selects the allowed operand count.
+      oneOf:
+        - title: Binary operation
+          type: object
+          additionalProperties: false
+          required: [operation, operands]
+          properties:
+            operation:
+              type: string
+              enum: [add, subtract, multiply, divide, power]
+            operands:
+              type: array
+              items:
+                type: number
+                format: double
+              minItems: 2
+              maxItems: 2
+        - title: Unary operation
+          type: object
+          additionalProperties: false
+          required: [operation, operands]
+          properties:
+            operation:
+              type: string
+              enum: [sqrt, percent]
+            operands:
+              type: array
+              items:
+                type: number
+                format: double
+              minItems: 1
+              maxItems: 1
+
+    CalculateResponse:
+      type: object
+      additionalProperties: false
+      required: [operation, operands, result]
+      properties:
+        operation:
+          $ref: '#/components/schemas/Operation'
+        operands:
+          type: array
+          items:
+            type: number
+            format: double
+          description: The request operands, echoed unchanged.
+        result:
+          type: number
+          format: double
+          description: Unrounded binary64 result. Negative zero is normalized to 0.
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message]
+          properties:
+            code:
+              $ref: '#/components/schemas/ErrorCode'
+            message:
+              type: string
+              description: Developer-facing message; not a UI contract.
+
+    ErrorCode:
+      type: string
+      enum:
+        - INVALID_JSON
+        - UNKNOWN_FIELD
+        - UNKNOWN_OPERATION
+        - INVALID_OPERAND_COUNT
+        - INVALID_OPERAND
+        - PAYLOAD_TOO_LARGE
+        - INVALID_CONTENT_TYPE
+        - DIVISION_BY_ZERO
+        - NEGATIVE_SQUARE_ROOT
+        - NON_FINITE_RESULT
+        - NOT_FOUND
+        - METHOD_NOT_ALLOWED
+        - INTERNAL_ERROR
+
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          const: ok

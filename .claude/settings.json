@@ -1,0 +1,51 @@
+{
+  "model": "deepseek-flash[1m]",
+  "effortLevel": "max",
+  "outputStyle": "Concise",
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "blockReadsOutsideWorkingDirectories": true,
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(gh pr create *)"
+    ],
+    "deny": [
+      "Read(//**/.env)",
+      "Read(//**/.env.*)",
+      "Read(//**/secrets.local.json)",
+      "Read(//**/secrets/**)",
+      "Read(//**/*.pem)",
+      "Read(//**/*.key)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": false,
+    "allowUnsandboxedCommands": false,
+    "filesystem": {
+      "denyRead": [
+        "~/**/.env",
+        "~/**/.env.*",
+        "~/**/secrets.local.json",
+        "~/**/secrets",
+        "~/.ssh",
+        "~/.aws"
+      ],
+      "denyWrite": [
+        "~/**/.env",
+        "~/**/.env.*",
+        "~/**/secrets.local.json",
+        "~/**/secrets"
+      ]
+    }
+  }
+}
