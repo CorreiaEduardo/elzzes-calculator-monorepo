@@ -1,0 +1,3 @@
+> The final step was to finish or polish some of the deliverables. But most of it I did along the way. But I ran the spec anyways to ensure docs would be updated and any missing concept would be addressed.
+
+Check this repo and implement @docs/specs/004-delivery-and-verification/SPEC.md . a lot of it have been done already. but update any docs that may mention otherwise and implement the gaps. also modify the spec to add a makefile if someone wants to run it outside docker, and emphasize better "how to run" the app in readme. and in a minor subsection of it how to run storybook.

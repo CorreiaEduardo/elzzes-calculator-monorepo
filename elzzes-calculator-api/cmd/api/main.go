@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"elzzes-calculator-api/internal/calculator"
 	"elzzes-calculator-api/internal/config"
 	"elzzes-calculator-api/internal/logger"
 	transport "elzzes-calculator-api/internal/transport/http"
@@ -41,7 +42,7 @@ func main() {
 	}
 
 	server := &http.Server{
-		Handler:           transport.NewHandler(appLog),
+		Handler:           transport.NewHandler(appLog, calculator.New()),
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       readTimeout,
 		WriteTimeout:      writeTimeout,

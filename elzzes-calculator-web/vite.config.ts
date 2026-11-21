@@ -2,24 +2,40 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 import tailwindcss from '@tailwindcss/vite'
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss()
-  ],
+  plugins: [react(), tailwindcss()],
 
   test: {
     globals: true,
     environment: 'happy-dom',
-    setupFiles: '.vitest/setup',
-    include: ['**/test.{ts,tsx}']
+    pool: 'threads',
+    maxWorkers: 2,
+    environmentOptions: {
+      happyDOM: {
+        url: 'http://localhost:3000'
+      }
+    },
+    setupFiles: './src/test/setup.ts',
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.{test,spec}.{ts,tsx}', 'src/test/**', 'src/main.tsx']
+    }
   },
 
   server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true
+      }
+    },
     watch: {
       usePolling: true,
-      interval: 1000,
-    },
-  },
+      interval: 1000
+    }
+  }
 })

@@ -1,6 +1,6 @@
 # 003 — Calculator UI
 
-**Status:** scoped (documentation baseline, 2026-11-20). Depends on the contracts in specs [001](../001-basic-arithmetic-operations/SPEC.md) and [002](../002-advanced-arithmetic-operations/SPEC.md). UI behavior is canonical in [Design](../../DESIGN.md); this spec defines scope and acceptance. Implementation conventions: [frontend](../../../elzzes-calculator-web/docs/CONVENTIONS.md), [UI library](../../../elzzes-ui-lib/docs/CONVENTIONS.md). Wire contract: [`openapi.yaml`](../../../elzzes-calculator-api/docs/openapi.yaml).
+**Status:** implemented (2026-11-20); automated tests, coverage, and Storybook build pass, and the manual responsive review is complete. Depends on the contracts in specs [001](../001-basic-arithmetic-operations/SPEC.md) and [002](../002-advanced-arithmetic-operations/SPEC.md). Component names were generalized during implementation to `Card`, `Button`, `Display`, and `Keypad`; see [Design § Components](../../DESIGN.md#components). UI behavior is canonical in [Design](../../DESIGN.md); this spec defines scope and acceptance. Implementation conventions: [frontend](../../../elzzes-calculator-web/docs/CONVENTIONS.md), [UI library](../../../elzzes-ui-lib/docs/CONVENTIONS.md). Wire contract: [`openapi.yaml`](../../../elzzes-calculator-api/docs/openapi.yaml).
 
 ## What is it?
 

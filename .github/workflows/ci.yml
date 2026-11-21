@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: Go API
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: elzzes-calculator-api/go.mod
+          cache-dependency-path: elzzes-calculator-api/go.mod
+
+      - name: Format, vet, test, coverage, race, build
+        run: make fmt-check vet go-test go-coverage go-race go-build
+
+      - name: Upload coverage profile
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-coverage
+          path: elzzes-calculator-api/coverage.out
+          if-no-files-found: error
+
+  web:
+    name: Web and UI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.21.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: make install-web
+
+      - name: Lint and typecheck
+        run: make lint-web typecheck-web lint-ui typecheck-ui
+
+      - name: Test and coverage
+        run: make test-web coverage-web test-ui coverage-ui
+
+      - name: Build SPA and Storybook
+        run: make build-web build-storybook
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: js-coverage
+          path: |
+            elzzes-calculator-web/coverage
+            elzzes-ui-lib/coverage
+          if-no-files-found: error
+
+  compose:
+    name: Docker Compose smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build, smoke-test, and stop the stack
+        run: make compose-verify

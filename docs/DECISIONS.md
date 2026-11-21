@@ -1,6 +1,6 @@
 # Decisions
 
-**Status:** scaffold baseline, 2026-11-20. This is the high-level decision index, not a second specification. Each definition has one canonical home; update that document, not this page.
+**Status:** implementation baseline, 2026-11-20. This is the high-level decision index, not a second specification. Each definition has one canonical home; update that document, not this page.
 
 ## Product shape
 
@@ -12,7 +12,7 @@
 
 ## Architecture style
 
-- Lightweight Ports & Adapters: the calculator core is pure; `transport/http` defines the `Logger` capability it consumes, `logger` provides the slog adapter, and `config` owns environment loading. Ports are consumer-owned; there is no central ports package.
+- Lightweight Ports & Adapters: the calculator core is pure; `transport/http` defines the `Logger` and `Calculator` capabilities it consumes, `logger` provides the slog adapter, and `config` owns environment loading. Ports are consumer-owned; there is no central ports package. The transport may depend on the calculator's public API; the calculator never depends on transport or HTTP.
 - One-word package and file names where a plain word works (`config`, `logger`, `http`, `env`), not compound placeholders.
 - Rationale and layer rules: [PRINCIPLES § Invariants](PRINCIPLES.md#invariants), [Architecture § Backend](ARCHITECTURE.md#backend), [backend conventions](../elzzes-calculator-api/docs/CONVENTIONS.md).
 
@@ -30,7 +30,8 @@
 | Contract | OpenAPI 3.1 | Machine-readable contract shared by both layers. |
 | Tests | Go `testing`/`httptest`; Vitest + RTL + MSW; Playwright optional | Fast unit/component coverage; E2E optional. |
 | Delivery | Docker + Compose + Nginx | Reproducible local run; static SPA and API as separate containers on one origin. |
-| CI | GitHub Actions | Runs the same lint/test/build checks on push and PR. |
+| Local commands | Root `Makefile` | `install`, `dev`, `storybook`, `verify`, and `compose-verify` wrap the package scripts; no new dependencies or application logic. |
+| CI | GitHub Actions | Runs the same `make verify` checks plus a Compose smoke test on push and PR. |
 
 ## Boundaries
 
@@ -55,6 +56,7 @@
 | UI library implementation conventions | [UI library conventions](../elzzes-ui-lib/docs/CONVENTIONS.md) |
 | Invariants and decision rules | [PRINCIPLES.md](PRINCIPLES.md) |
 | Delivery, tests, coverage, CI verification | [spec 004](specs/004-delivery-and-verification/SPEC.md) |
+| Local run instructions (Docker, Makefile, Storybook) | [README § How to run](../README.md#how-to-run) |
 
 ## Rejected alternatives
 

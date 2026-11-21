@@ -1,5 +1,5 @@
 // Package http adapts net/http to the service: routing, middleware, JSON errors,
-// and health. It has no calculator knowledge.
+// health, and the calculator endpoint.
 package http
 
 import (

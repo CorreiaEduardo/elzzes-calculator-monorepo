@@ -1,6 +1,6 @@
 # Backend conventions
 
-**Status:** scaffold baseline, 2026-11-20. Canonical for Go implementation conventions in `elzzes-calculator-api`. The service runs `GET /healthz`; calculator behavior lands with specs 001–002. The wire contract is [`openapi.yaml`](openapi.yaml); system-wide structure and numeric rules are in [Architecture](../../docs/ARCHITECTURE.md); invariants are in [Principles](../../docs/PRINCIPLES.md).
+**Status:** backend implementation baseline, 2026-11-20. Canonical for Go implementation conventions in `elzzes-calculator-api`. The service implements all seven calculator operations and `GET /healthz`; the web UI remains spec 003. The wire contract is [`openapi.yaml`](openapi.yaml); system-wide structure and numeric rules are in [Architecture](../../docs/ARCHITECTURE.md); invariants are in [Principles](../../docs/PRINCIPLES.md).
 
 ## Layout
 
@@ -8,9 +8,9 @@
 elzzes-calculator-api/
 ├── cmd/api/main.go                  # composition root: wiring, server timeouts, graceful shutdown
 ├── internal/
-│   ├── calculator/                  # pure core: calculator.go, errors.go (specs 001–002)
+│   ├── calculator/                  # pure core: operation registry, arithmetic, errors
 │   ├── transport/
-│   │   └── http/                    # net/http adapter: routes, handler, errors, logger port
+│   │   └── http/                    # net/http adapter: routes, calculate, errors, ports
 │   │       └── middleware/          # request logging, panic recovery
 │   ├── config/                      # PORT loading and validation
 │   └── logger/                      # slog adapter for the transport's Logger port
@@ -23,8 +23,8 @@ elzzes-calculator-api/
 ```
 
 - The backend is a lightweight Ports & Adapters (hexagonal) design with consumer-owned ports: a layer defines the small interface it needs in its own package, and an adapter implements it from the outside. There is no central `ports` package.
-- `calculator` is the core: no HTTP or JSON types, no logging, config, OS, transport, or global state. Each operation is a pure function over finite `float64` values, returning a result or a typed domain error. It is a placeholder until specs 001–002.
-- `transport/http` owns the net/http adapter: server-side routing, middleware, strict decoding, operation/arity validation, status/code mapping, the JSON error envelope, and `/healthz`. It declares the `Logger` port it needs in `logger.go`. Handlers are thin: decode → validate → call the calculator port → encode. Swapping to Fiber or another framework replaces this package and the wiring in `main`.
+- `calculator` is the core: no HTTP or JSON types, no logging, config, OS, transport, or global state. It owns the operation vocabulary and arity registry (`Operation`, `ParseOperation`, `Arity`), the seven pure operations, and typed domain errors. Each operation is a pure function over finite `float64` values, returning a result or a domain error.
+- `transport/http` owns the net/http adapter: server-side routing, middleware, strict decoding, operation/arity validation, status/code mapping, the JSON error envelope, `/healthz`, and `POST /api/v1/calculate`. It declares the `Logger` and `Calculator` ports it needs and maps domain errors to OpenAPI codes. Handlers are thin: decode → validate → call the calculator port → encode. Swapping to Fiber or another framework replaces this package and the wiring in `main`.
 - `transport/http/middleware` depends only on the callbacks it uses (`func(msg string, args ...any)`), so it needs no logger interface of its own.
 - `logger` is the only package importing `log/slog`; `config` is the only package reading the environment. Replacing either touches that package and one wiring line in `main`.
 - `cmd/api` is the only composition point. It wires the adapters and builds the `http.Server`; it does not construct logging internals.
@@ -37,9 +37,11 @@ elzzes-calculator-api/
 - All API routes live under `/api/v1/`. JSON in, JSON out; every response under `/api/` is JSON, including `404` and `405`.
 - Routing returns the contract's JSON envelopes: an unmatched path is `404 NOT_FOUND`; a known path with the wrong method is `405 METHOD_NOT_ALLOWED` with an `Allow` header. GET patterns also serve HEAD. `GET /healthz` is registered by the HTTP adapter.
 - Middleware order is request logging outermost, panic recovery next, router innermost, so a recovered panic is logged with status `500`.
-- Enforce `Content-Type: application/json` before decoding; otherwise return `415 INVALID_CONTENT_TYPE`.
+- Enforce `Content-Type: application/json` before decoding; parameters such as `charset=utf-8` are accepted, any other media type or malformed header returns `415 INVALID_CONTENT_TYPE`.
 - Cap request bodies at the limit in [`openapi.yaml`](openapi.yaml); larger bodies return `413 PAYLOAD_TOO_LARGE`.
 - Decode with unknown fields rejected. A missing body, invalid JSON, or wrong top-level type returns `400 INVALID_JSON`; an unknown field returns `400 UNKNOWN_FIELD`.
+- Field-type errors are data errors, not syntax errors: missing or non-string `operation` → `400 UNKNOWN_OPERATION`; non-array `operands` → `400 INVALID_OPERAND`; an invalid or out-of-range element → `400 INVALID_OPERAND` naming its index (`operands[1] must be a JSON number`). `INVALID_JSON` is reserved for unparseable bodies, wrong top-level types, and trailing data.
+- Duplicate JSON object keys follow `encoding/json` last-value-wins semantics; rejecting duplicates is out of scope.
 - Validate the operation against the registry and the operand count against its arity (`400 UNKNOWN_OPERATION`, `400 INVALID_OPERAND_COUNT`). Operands must be JSON numbers inside binary64 range (`400 INVALID_OPERAND`).
 - Success returns `200` with `{operation, operands, result}`. Echo the request operands; do not round the result.
 - Errors use one envelope: `{"error":{"code":"...","message":"..."}}`. `message` is developer-facing; the client owns user-facing copy. Codes, statuses, and schemas are in [`openapi.yaml`](openapi.yaml); do not maintain a second list.
@@ -88,7 +90,7 @@ The full numeric model is canonical in [Architecture § Numeric model](../../doc
 
 - `_test.go` files sit beside the implementation. Test names describe behavior (`TestCalculateDivisionByZero`).
 - Use table-driven tests for operations and input validation; `httptest` for handlers.
-- Test the core directly; test the HTTP adapter through `httptest` and pass fake loggers or recording callbacks to the ports and middleware. Adapters are concrete; no generated mocks.
+- Test the core directly; test the HTTP adapter through `httptest`, using the real core for success/domain-error cases or a stub `Calculator` for wiring and unexpected-error tests. Pass fake loggers or recording callbacks to the ports and middleware. Adapters are concrete; no generated mocks.
 - Cover every operation and every edge case in specs 001–002; the edge-case matrices are the source of test names.
 - Use explicit float tolerance where binary64 is not exact; exact comparisons where it is.
 - Prefer the standard library over assertion/mocking libraries.
@@ -105,7 +107,7 @@ The full numeric model is canonical in [Architecture § Numeric model](../../doc
 ## Boundaries
 
 - No UI logic, persistence, auth, rate limiting, static file serving, or third-party HTTP framework.
-- Respect the layer boundary: `calculator` imports nothing from `internal/`; `transport/http` imports only its `middleware` and the standard library; `logger` and `config` import only the standard library; `cmd/api` is the only composition point and the only place adapters meet.
+- Respect the layer boundary: `transport/http` may depend on the calculator's public API, its `middleware`, and the Go standard library; `calculator` imports nothing from `internal/` and must not depend on transport or HTTP concerns; `logger` and `config` import only the standard library; `cmd/api` is the only composition point and the only place adapters meet.
 - Ports are declared by their consumer, next to its use. The provider package never imports the consumer; conformance is checked at the wiring point in `cmd/api`.
-- No `/api/v1/calculate` route is registered until spec 001 implements it; do not add placeholder routes or contract codes that OpenAPI does not define.
+- The calculate route is implemented; do not add placeholder routes or contract codes that OpenAPI does not define.
 - The wire contract changes only through a spec/OpenAPI/Architecture update agreed with the user ([AGENTS.md](../../AGENTS.md)).

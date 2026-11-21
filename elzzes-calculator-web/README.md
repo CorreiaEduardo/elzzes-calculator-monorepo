@@ -2,7 +2,7 @@
 
 The React + TypeScript SPA for Elzzes Calculator. It collects input, orchestrates API requests, formats results, and presents errors. It does **not** perform arithmetic.
 
-**Status:** documentation baseline and scaffolding — UI behavior is specified in [`docs/DESIGN.md`](../docs/DESIGN.md) and [spec 003](../docs/specs/003-calculator-ui/SPEC.md). Stack: React 19, TypeScript, Vite, Tailwind CSS v4, TanStack Query, Zod.
+**Status:** implemented — calculator UI, immediate-execution reducer, TanStack Query + Zod API client, keyboard/accessibility behavior, and tests. UI behavior is specified in [`docs/DESIGN.md`](../docs/DESIGN.md) and [spec 003](../docs/specs/003-calculator-ui/SPEC.md). Stack: React 19, TypeScript, Vite, Tailwind CSS v4, TanStack Query, Zod.
 
 ## Responsibilities
 
@@ -47,11 +47,11 @@ The image is multi-stage: pnpm workspace install and Vite build, then unprivileg
 
 ## Testing
 
-Vitest + React Testing Library + user-event, with MSW for API responses. Covered: reducer transitions, entry rules, formatting, keyboard parity, loading/error/retry states, accessibility roles/names, API-client success and failure mapping. Playwright E2E is optional. The coverage target and CI are canonical in [spec 004](../docs/specs/004-delivery-and-verification/SPEC.md).
+Vitest + React Testing Library + user-event, with MSW for API responses. Covered: reducer transitions, entry rules, formatting, keyboard mapping, loading/error/retry states, accessibility roles/names, API-client success and failure mapping, and StrictMode single-request behavior. Run `pnpm --filter elzzes-calculator-web test:coverage` for the coverage report. Playwright E2E is optional. The coverage target and CI are canonical in [spec 004](../docs/specs/004-delivery-and-verification/SPEC.md).
 
 ## Conventions and layout
 
-The layout, state flow, API-client rules, styling, and testing conventions are canonical in [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md). High-level structure: `src/app/`, `src/features/calculator/`, `src/lib/`, `src/styles/`, `src/test/`.
+The layout, state flow, API-client rules, styling, and testing conventions are canonical in [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md). High-level structure: `src/app/`, `src/features/calculator/`, `src/styles/`, `src/test/`.
 
 ## Boundaries
 

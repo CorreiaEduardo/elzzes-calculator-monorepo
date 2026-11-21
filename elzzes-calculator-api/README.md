@@ -2,7 +2,7 @@
 
 The Go REST service for Elzzes Calculator. It owns every arithmetic operation; clients never compute results. The service is stateless: each request is independent and nothing is persisted. It does not serve the SPA — Nginx does that in production.
 
-**Status:** runnable scaffold — `GET /healthz` is live; `POST /api/v1/calculate` is intentionally not registered until spec 001. Implementation is specified in [spec 001](../docs/specs/001-basic-arithmetic-operations/SPEC.md) and [spec 002](../docs/specs/002-advanced-arithmetic-operations/SPEC.md). Stack: Go standard library (`net/http`, `encoding/json`, `log/slog`), OpenAPI 3.1, Docker.
+**Status:** backend implemented — all seven operations through `POST /api/v1/calculate`, plus `GET /healthz`. Operation behavior is specified in [spec 001](../docs/specs/001-basic-arithmetic-operations/SPEC.md) and [spec 002](../docs/specs/002-advanced-arithmetic-operations/SPEC.md); the web UI remains [spec 003](../docs/specs/003-calculator-ui/SPEC.md). Stack: Go standard library (`net/http`, `encoding/json`, `log/slog`), OpenAPI 3.1, Docker.
 
 ## Responsibilities
 
@@ -20,7 +20,11 @@ Requires Go 1.27 or newer.
 cd elzzes-calculator-api
 go run ./cmd/api              # PORT defaults to 8080
 curl -s localhost:8080/healthz
+curl -s localhost:8080/api/v1/calculate -H 'Content-Type: application/json' \
+  -d '{"operation":"add","operands":[12.5,7.5]}'
 ```
+
+All operations and error examples are in the [root README § API examples](../README.md#api-examples).
 
 Development is API-only; Vite serves the SPA on `:5173` and proxies `/api`. In production Nginx serves the SPA and proxies `/api/` and `/healthz` to this service.
 

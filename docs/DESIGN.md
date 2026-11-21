@@ -1,6 +1,6 @@
 # Product and UI design
 
-**Status:** planned baseline, 2026-11-20. Canonical for UI behavior; acceptance criteria live in [spec 003](specs/003-calculator-ui/SPEC.md). Implementation conventions: [web](../elzzes-calculator-web/docs/CONVENTIONS.md), [UI library](../elzzes-ui-lib/docs/CONVENTIONS.md). Update the canonical section and the affected spec together.
+**Status:** implementation baseline, 2026-11-20. Canonical for UI behavior; acceptance criteria live in [spec 003](specs/003-calculator-ui/SPEC.md). The shared library exposes generic primitives; calculator-specific names below were superseded during implementation. Implementation conventions: [web](../elzzes-calculator-web/docs/CONVENTIONS.md), [UI library](../elzzes-ui-lib/docs/CONVENTIONS.md). Update the canonical section and the affected spec together.
 
 ## Design goals
 
@@ -137,7 +137,7 @@ The calculator is fully operable by keyboard. Shortcuts are conveniences, never 
 - Shortcuts ignore events with `Ctrl`/`Meta`/`Alt` so browser shortcuts keep working.
 - The global handler does not hijack `Enter`/`Space` when a button has focus; native button activation wins and prevents double-fire.
 - Mapped keys call `preventDefault()` (e.g., `/` quick-find, `Backspace` history navigation).
-- Buttons expose `aria-keyshortcuts` where a shortcut exists, so screen-reader users can discover them.
+- Buttons expose `aria-keyshortcuts` where a shortcut exists, so shortcuts are discoverable.
 
 ## Accessibility
 
@@ -180,23 +180,35 @@ Tokens live in `@elzzes/ui` (folder `elzzes-ui-lib`) as Tailwind CSS custom prop
 
 ## Components
 
-`@elzzes/ui` (folder `elzzes-ui-lib`; presentational, controlled):
+`@elzzes/ui` (folder `elzzes-ui-lib`; presentational, controlled, calculator-agnostic):
 
-- `CalculatorFrame` — card surface and layout slots.
-- `Display` — expression/status text, main value, alert slot, busy state. Receives formatted strings.
-- `Keypad` — grid layout and composition; knows nothing about operations.
-- `CalcButton` — variants `digit`, `operator`, `advanced`, `action`, `equals`; forwards accessible name and `aria-keyshortcuts`.
+- `Card` — generic surface with padding and semantic element choice.
+- `Display` — expression/status live region, main value, error alert slot, busy state. Receives formatted strings.
+- `Keypad` — reusable accessory strip plus a 4-column key grid; knows nothing about operations.
+- `Button` — generic variants `primary`, `secondary`, `outline`, `ghost`, `accent`, `danger`; sizes `sm`, `md`, `lg`, `xl`; forwards accessible names and `aria-keyshortcuts`.
 - Theme tokens — colors, spacing, radii, typography.
 - Storybook stories — variants and states, documented in isolation ([UI library conventions](../elzzes-ui-lib/docs/CONVENTIONS.md)).
+
+The web app maps calculator key roles to the generic variants: equals → `primary`, digits → `secondary`, binary operators → `outline`, advanced keys → `accent`, AC → `danger`, backspace/sign → `ghost`. The library contains no calculator vocabulary, copy, state, API, or arithmetic.
 
 `elzzes-calculator-web` (logic):
 
 - `Calculator` — composition and event wiring.
 - `useCalculator` — reducer state machine and request orchestration via a TanStack Query mutation.
-- `formatResult`, entry rules — pure functions.
+- `formatNumber`, entry rules, expression labels — pure functions.
 - `calculate` API client, Zod schemas, and error mapping.
 
-No component in `@elzzes/ui` imports the API, the state machine, or arithmetic helpers.
+### Resolved implementation details
+
+- Unary, backspace, and sign after an error are no-ops; digits/`.` start fresh, operators recover per the error tables, `=` retries only transient errors, and AC resets.
+- A domain error freezes the last displayed text; a transient error retains the expression and the exact retry plan.
+- Expression labels: standalone `√(x) = y`, `x% = y`; power uses `^`; a unary applied to a second operand keeps the pending expression (`12.5 + √(9)`).
+- Accessible names for add, subtract, equals, and the decimal point are `add`, `subtract`, `equals`, and `decimal point`; shortcuts use the mapped keys (`Enter`, `Backspace`, `Escape Delete`, and so on).
+- Backspacing to an empty entry displays `0`; the next digit starts a new entry.
+- Results are rounded to 12 significant digits before the exponential threshold is applied; exponents use lowercase `e`, an explicit sign, and no zero padding.
+- Request ids are monotonic across AC; continuations describe how a success lands (`equals`, `chain`, unary on the current value, unary on the second operand).
+- Documented 4xx responses with a valid envelope map to the domain invalid-calculation copy; malformed or unknown responses map to the transient `INVALID_RESPONSE` copy.
+- The API URL is built from the relative path and `window.location.origin`; no host literal is embedded.
 
 ## UI test scenarios
 

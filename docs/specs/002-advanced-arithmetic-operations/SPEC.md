@@ -1,6 +1,6 @@
 # 002 — Advanced arithmetic operations
 
-**Status:** scoped (documentation baseline, 2026-11-20). Depends on the contract and validation from [spec 001](../001-basic-arithmetic-operations/SPEC.md). Wire contract and examples: [`openapi.yaml`](../../../elzzes-calculator-api/docs/openapi.yaml). Operation behavior and edge cases below are canonical for these three operations. UI behavior: [Design](../../DESIGN.md).
+**Status:** implemented (2026-11-20), including the UI through [spec 003](../003-calculator-ui/SPEC.md). Depends on the contract and validation from [spec 001](../001-basic-arithmetic-operations/SPEC.md). Wire contract and examples: [`openapi.yaml`](../../../elzzes-calculator-api/docs/openapi.yaml). Operation behavior and edge cases below are canonical for these three operations. UI behavior: [Design](../../DESIGN.md).
 
 ## What is it?
 

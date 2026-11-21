@@ -1,7 +1,48 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @source "./";
+@source "../stories";
+@source "../.storybook";
 
 @theme {
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
+  --color-ui-page: #f1f5f9;
+  --color-ui-surface: #ffffff;
+  --color-ui-ink: #0f172a;
+  --color-ui-muted: #475569;
+  --color-ui-accent: #1d4ed8;
+  --color-ui-accent-hover: #1e40af;
+  --color-ui-accent-ink: #ffffff;
+  --color-ui-accent-soft: #dbeafe;
+  --color-ui-danger: #b91c1c;
+  --color-ui-danger-soft: #fee2e2;
+  --color-ui-key: #ffffff;
+  --color-ui-key-hover: #e2e8f0;
+  --color-ui-operator: #e0e7ff;
+  --color-ui-operator-hover: #c7d2fe;
+  --color-ui-border: #e2e8f0;
+
+  --radius-ui-key: 8px;
+  --radius-ui-card: 12px;
+  --shadow-ui-card:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-ui-page: #0b1220;
+    --color-ui-surface: #111827;
+    --color-ui-ink: #f8fafc;
+    --color-ui-muted: #cbd5e1;
+    --color-ui-accent: #60a5fa;
+    --color-ui-accent-hover: #93c5fd;
+    --color-ui-accent-ink: #0b1220;
+    --color-ui-accent-soft: #1e3a8a;
+    --color-ui-danger: #f87171;
+    --color-ui-danger-soft: #7f1d1d;
+    --color-ui-key: #1f2937;
+    --color-ui-key-hover: #374151;
+    --color-ui-operator: #1e293b;
+    --color-ui-operator-hover: #334155;
+    --color-ui-border: #1f2937;
+    --shadow-ui-card: none;
+  }
 }

@@ -2,9 +2,13 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	nethttp "net/http"
 	"net/http/httptest"
 	"testing"
+
+	"elzzes-calculator-api/internal/calculator"
 )
 
 func TestErrorCodeValues(t *testing.T) {
@@ -31,6 +35,60 @@ func TestErrorCodeValues(t *testing.T) {
 		if string(code) != value {
 			t.Errorf("code %q = %q, want %q", code, string(code), value)
 		}
+	}
+}
+
+func TestWriteCalculatorError(t *testing.T) {
+	tests := []struct {
+		name    string
+		err     error
+		want    ErrorCode
+		message string
+	}{
+		{
+			name:    "division by zero",
+			err:     calculator.ErrDivisionByZero,
+			want:    CodeDivisionByZero,
+			message: "cannot divide by zero",
+		},
+		{
+			name:    "wrapped negative square root",
+			err:     fmt.Errorf("calculate: %w", calculator.ErrNegativeSquareRoot),
+			want:    CodeNegativeSquareRoot,
+			message: "square root requires a non-negative operand",
+		},
+		{
+			name:    "non-finite result",
+			err:     calculator.ErrNonFiniteResult,
+			want:    CodeNonFiniteResult,
+			message: "result is not finite",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			if !writeCalculatorError(rec, tt.err) {
+				t.Fatalf("writeCalculatorError(%v) = false, want true", tt.err)
+			}
+			if rec.Code != nethttp.StatusUnprocessableEntity {
+				t.Errorf("status = %d, want 422", rec.Code)
+			}
+			envelope := decodeEnvelope(t, rec)
+			if envelope.Error.Code != tt.want || envelope.Error.Message != tt.message {
+				t.Errorf("envelope = %+v, want %s/%q", envelope.Error, tt.want, tt.message)
+			}
+		})
+	}
+}
+
+func TestWriteCalculatorErrorUnknown(t *testing.T) {
+	rec := httptest.NewRecorder()
+	if writeCalculatorError(rec, errors.New("boom")) {
+		t.Fatal("writeCalculatorError(unknown) = true, want false")
+	}
+	if rec.Body.Len() != 0 || rec.Code != nethttp.StatusOK {
+		t.Errorf("unknown error wrote response: status %d body %q", rec.Code, rec.Body.String())
 	}
 }
 

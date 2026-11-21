@@ -1,6 +1,6 @@
 # Architecture
 
-**Status:** scaffold baseline, stack agreed 2026-11-20. The API has a runnable health-only scaffold; no calculator implementation has landed. This document is canonical for system structure, request flow, state ownership, the numeric model, and deployment. The wire contract is canonical in [`openapi.yaml`](../elzzes-calculator-api/docs/openapi.yaml); operation behavior and edge cases in [spec 001](specs/001-basic-arithmetic-operations/SPEC.md) and [spec 002](specs/002-advanced-arithmetic-operations/SPEC.md); UI behavior in [Design](DESIGN.md); implementation details in the component conventions.
+**Status:** implementation baseline, stack agreed 2026-11-20. The API implements all seven operations and `GET /healthz`; the calculator UI, API client, and shared UI primitives are implemented. Spec 004 delivery is implemented: Docker Compose/Nginx, the root Makefile, GitHub Actions CI, and enforced coverage floors. This document is canonical for system structure, request flow, state ownership, the numeric model, and deployment. The wire contract is canonical in [`openapi.yaml`](../elzzes-calculator-api/docs/openapi.yaml); operation behavior and edge cases in [spec 001](specs/001-basic-arithmetic-operations/SPEC.md) and [spec 002](specs/002-advanced-arithmetic-operations/SPEC.md); UI behavior in [Design](DESIGN.md); implementation details in the component conventions.
 
 ## System context
 
@@ -50,7 +50,7 @@ Implementation details live in the component conventions: [backend](../elzzes-ca
 
 1. The user presses a key. The web reducer decides whether this is input editing or a calculation.
 2. Calculations go through a TanStack Query mutation and the typed API client as `POST /api/v1/calculate` with `operation` and `operands`.
-3. The HTTP adapter validates transport and payload, then calls the calculator core through its port.
+3. The HTTP adapter validates content type, the 4 KiB body cap, strict JSON fields, operation/arity, and operands, then calls the calculator core through its port.
 4. Core success becomes `200 {"operation": ..., "operands": ..., "result": ...}`; a domain failure becomes a documented `4xx` code; an unexpected failure is logged and becomes `500 INTERNAL_ERROR`.
 5. The client validates the response with Zod, maps it to a display value or user-facing error, formats it, and announces the outcome.
 6. The service stores nothing. Every calculation is independent.
@@ -59,11 +59,11 @@ The client is deliberately never the authority. It may reject obviously invalid 
 
 ## Backend
 
-The service is a lightweight Ports & Adapters design: `internal/calculator` is the pure core; `internal/transport/http` is the net/http adapter (routing, middleware, strict decoding, validation, status/code mapping, JSON error envelope, health) and declares the `Logger` capability it needs in its own package; `internal/logger` implements that port with `log/slog`; `internal/config` loads environment configuration. Ports are consumer-owned — there is no central ports package. The core never imports `net/http`, `log/slog`, or `os`, so replacing the transport, logger, or configuration source touches only that package and the composition root. `cmd/api` is the only place adapters meet. The exact layout, naming, error handling, testing, and logging rules are canonical in [backend conventions](../elzzes-calculator-api/docs/CONVENTIONS.md).
+The service is a lightweight Ports & Adapters design: `internal/calculator` is the pure core; `internal/transport/http` is the net/http adapter (routing, middleware, strict decoding, validation, status/code mapping, JSON error envelope, health) and declares the `Logger` capability it needs in its own package; `internal/logger` implements that port with `log/slog`; `internal/config` loads environment configuration. Ports are consumer-owned — there is no central ports package. The transport may depend on the calculator's public API (`Operation`, `ParseOperation`, `Arity`, and domain errors), but the dependency never runs the other way: the core never imports `net/http`, `log/slog`, `os`, or transport concerns. Replacing the transport, logger, or configuration source therefore touches only that package and the composition root. `cmd/api` is the only place adapters meet. The exact layout, naming, error handling, testing, and logging rules are canonical in [backend conventions](../elzzes-calculator-api/docs/CONVENTIONS.md).
 
 ### HTTP stack
 
-Go standard library only: `net/http` with method/pattern routing, `encoding/json`, `log/slog`. The service enforces the body cap from the OpenAPI contract, strict JSON decoding, JSON content type, panic recovery, request logging, explicit timeouts, graceful shutdown, and JSON `404`/`405` responses. All of this lives in the `internal/transport/http` adapter; `log/slog` is confined to `internal/logger`. It serves no static files and sets no CORS headers: Nginx serves the SPA and proxies the API on one origin; the Vite dev proxy preserves that model. Exact middleware, validation, and error-mapping rules are canonical in [backend conventions](../elzzes-calculator-api/docs/CONVENTIONS.md).
+Go standard library only: `net/http` with method/pattern routing, `encoding/json`, `log/slog`. The service enforces the 4 KiB body cap and JSON content type, rejects unknown fields and out-of-range operands, validates operation arity, maps domain errors to `422`, and returns JSON `404`/`405` responses. It also provides panic recovery, request logging, explicit timeouts, and graceful shutdown. All of this lives in the `internal/transport/http` adapter; `log/slog` is confined to `internal/logger`. It serves no static files and sets no CORS headers: Nginx serves the SPA and proxies the API on one origin; the Vite dev proxy preserves that model. Exact middleware, validation, and error-mapping rules are canonical in [backend conventions](../elzzes-calculator-api/docs/CONVENTIONS.md).
 
 ## API contract
 
@@ -118,9 +118,9 @@ Nothing is persisted: no `localStorage`, session, URL state, or backend history.
 
 ## Shared UI library
 
-`@elzzes/ui` (folder `elzzes-ui-lib`) is an internal, unpublished package containing controlled presentational components and design tokens:
+`@elzzes/ui` (folder `elzzes-ui-lib`) is an internal, unpublished package containing generic, controlled presentational components and design tokens:
 
-- The component set, variants, and slots are defined in [Design § Components](DESIGN.md#components); theme tokens are Tailwind CSS custom properties.
+- The library exposes `Button`, `Card`, `Display`, and `Keypad`; the web app maps calculator key roles to generic variants. Names, variants, and slots are defined in [Design § Components](DESIGN.md#components); theme tokens are Tailwind CSS custom properties.
 - Components receive formatted strings and callbacks; they hold no calculator state and know nothing about the API or operations.
 - Tailwind CSS v4 with tokenized colors, spacing, radii, and type. Light/dark via `prefers-color-scheme`.
 - Accessibility contract: real buttons, accessible names, visible focus, minimum target size, `aria-keyshortcuts` hints. Documented in [Design § Accessibility](DESIGN.md#accessibility).
@@ -154,11 +154,12 @@ docker compose up --build
 ```
 
 - Nginx serves the static SPA and proxies `/api/` and `/healthz` to `api:8080`. One origin, no CORS, no Node runtime in the final web image.
-- The two service Dockerfiles plus `compose.yaml` are the agreed reading of the brief's "Dockerfile to run frontend + backend together": `docker compose up` runs both. This assumption is recorded in [README § Quick start](../README.md#quick-start-docker-compose).
+- The two service Dockerfiles plus `compose.yaml` are the agreed reading of the brief's "Dockerfile to run frontend + backend together": `docker compose up` runs both. This assumption is recorded in [README § How to run](../README.md#how-to-run).
 - `PORT` defaults to `8080`. The stack is stateless and needs no volumes or secrets; `/healthz` is the probe.
 - Root and package `.dockerignore` files exclude `.git`, `node_modules`, build output, coverage, and local env files.
 - Images run as non-root where the base image permits; the final API image contains no Go toolchain or source.
-- Local development does not use the image: pnpm + Vite + `go run` as described above.
+- Local development does not use the image: `make dev` (or pnpm + Vite + `go run`) as described in [README § Local development](../README.md#local-development). The root `Makefile` (`install`, `dev`, `storybook`, `verify`, `compose-verify`) wraps the package scripts and adds no logic or dependency.
+- GitHub Actions runs the same `make verify` checks plus a Compose build-and-smoke job on push and pull requests ([spec 004](specs/004-delivery-and-verification/SPEC.md#ci)).
 
 **Rejected alternative:** a single Go image embedding the SPA via `go:embed`. It has fewer units, but couples every frontend build to the API image and moves static serving into the Go binary. The agreed topology keeps static serving in Nginx and the API focused on arithmetic.
 

@@ -1,6 +1,6 @@
 # 001 — Basic arithmetic operations
 
-**Status:** scoped (documentation baseline, 2026-11-20). Wire contract and examples: [`openapi.yaml`](../../../elzzes-calculator-api/docs/openapi.yaml). Operation behavior and edge cases below are canonical for these four operations. UI behavior: [Design](../../DESIGN.md). Implementation detail: [backend](../../../elzzes-calculator-api/docs/CONVENTIONS.md), [frontend](../../../elzzes-calculator-web/docs/CONVENTIONS.md).
+**Status:** implemented (2026-11-20), including the UI through [spec 003](../003-calculator-ui/SPEC.md). Wire contract and examples: [`openapi.yaml`](../../../elzzes-calculator-api/docs/openapi.yaml). Operation behavior and edge cases below are canonical for these four operations. UI behavior: [Design](../../DESIGN.md). Implementation detail: [backend](../../../elzzes-calculator-api/docs/CONVENTIONS.md), [frontend](../../../elzzes-calculator-web/docs/CONVENTIONS.md).
 
 ## What is it?
 
@@ -36,12 +36,15 @@ Operands are IEEE-754 binary64 values decoded from JSON numbers. The service ret
 
 1. **Division by zero:** `10 ÷ 0`, `10 ÷ -0`, `0 ÷ 0` → `422 DIVISION_BY_ZERO`; no panic, no `Infinity`.
 2. **Overflow:** e.g. `1.7976931348623157e308 × 2` → `422 NON_FINITE_RESULT`; equivalent cases for `add`, `subtract`, and `divide`.
-3. **Underflow:** e.g. `1e-308 ÷ 1e10` returns `0`; accepted, not an error.
+3. **Underflow:** e.g. `5e-324 ÷ 10` returns `0`; accepted, not an error.
 4. **Negative and fractional operands:** signs preserved; decimal operands accepted; `1 ÷ 3` returns the binary64 approximation (tests use tolerance or assert the formatted display, not string equality of the raw result).
 5. **Negative zero:** a result of `-0` is normalized to `0` in the response.
 6. **Malformed payloads:** missing body, invalid JSON, wrong top-level type, unknown field, missing/unknown `operation`, zero/one/three operands, string operand, `null` operands, out-of-range number (`1e999`), wrong content type, body over the contract limit → the documented 400/413/415 codes.
 7. **Methods and routes:** `GET /api/v1/calculate` → `405 METHOD_NOT_ALLOWED`; unknown `/api/...` path → `404 NOT_FOUND`.
 8. **Large and tiny operands within range:** round-trip through JSON without rejection.
+9. **Duplicate object keys:** last value wins, matching `encoding/json` semantics; rejecting duplicate keys is out of scope.
+
+Field-type errors are data errors, not syntax errors: a missing or non-string `operation` is `400 UNKNOWN_OPERATION`; a non-array `operands` value is `400 INVALID_OPERAND`; an invalid or out-of-range element is `400 INVALID_OPERAND` naming its index. `400 INVALID_JSON` is reserved for unparseable JSON, wrong top-level types, and trailing data.
 
 Every case above maps to at least one Go test; UI-level cases for division by zero and generic errors live in spec 003.
 
